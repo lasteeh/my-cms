@@ -2,8 +2,8 @@ RewriteOptions inherit
 
 RewriteEngine On
 
-# Exclude public/ and its content from rewrite
-RewriteRule ^public/ - [L]
+# Exclude public/ and storage/ and their content from rewrite
+RewriteRule ^(public|storage)/ - [L]
 
 # Rewrite all requests to the index.php file
-RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+RewriteRule ^(.*)$ public/index.php [QSA,L]
