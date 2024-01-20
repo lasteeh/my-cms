@@ -7,7 +7,7 @@
 
 1. download the application and relocate it to the desired directory.
 2. create a database and a user with full access rights.
-3. setup the `config.php` file with your database details.
+3. setup the `.env` file with your database details.
 
 # development
 
