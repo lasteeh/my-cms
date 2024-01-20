@@ -2,11 +2,12 @@
 
 namespace Core;
 
+use App\Controllers\SessionsController;
 use Core\Components\Request;
 
 class App
 {
-  protected static $ROOT_DIR;
+  public static $ROOT_DIR;
   protected static $ROOT_URL;
   protected static $ROUTES = [];
 
