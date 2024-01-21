@@ -9,7 +9,7 @@ class Request
   public $METHOD = 'GET';
   public $CONTROLLER = [
     'name' => 'application',
-    'action' => 'index',
+    'action' => 'not_found',
   ];
   public $ERRORS = [];
 
