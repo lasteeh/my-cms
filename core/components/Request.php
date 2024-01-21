@@ -4,7 +4,7 @@ namespace Core\Components;
 
 class Request
 {
-  public $URI = '/';
+  public $URI = null;
   public $PARAMETER = null;
   public $METHOD = 'GET';
   public $CONTROLLER = [
@@ -13,8 +13,10 @@ class Request
   ];
   public $ERRORS = [];
 
-  public function __construct($root_url = null, $configured_routes = [])
+  public function __construct(string $server_request_uri = '/', string $root_url = null, array $configured_routes = [])
   {
+    $this->URI = $server_request_uri;
+
     // validate root_url as a valid url
     if ($root_url === null || !is_string($root_url) || !filter_var($root_url, FILTER_VALIDATE_URL)) {
       $root_url = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'];
@@ -32,7 +34,7 @@ class Request
     $this->initialize($configured_routes);
   }
 
-  protected function initialize($configured_routes = [])
+  protected function initialize(array $configured_routes = [])
   {
     foreach ($configured_routes as $route => $methods) {
       foreach ($methods as $method => $controller_name_action_pair) {

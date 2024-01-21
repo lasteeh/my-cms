@@ -62,14 +62,14 @@ class ActionController
     static::$skip_after_action = $this->normalize_filter_array($all_skip_after_action);
   }
 
-  public function filter_should_apply($action, $options = [])
+  public function filter_should_apply(string $action, array $options = [])
   {
     return empty($options) ||
       (isset($options['only']) && in_array($action, $options['only'])) ||
       (isset($options['except']) && !in_array($action, $options['except']));
   }
 
-  public function filter_should_skip($skip_filters, $filter, $action)
+  public function filter_should_skip($skip_filters, $filter, string $action)
   {
     if (isset($skip_filters[$filter])) {
       $skip_before_filter = $skip_filters[$filter];
@@ -86,7 +86,7 @@ class ActionController
     return false;
   }
 
-  public function execute($action)
+  public function execute(string $action)
   {
     foreach (static::$before_action as $filter => $options) {
       if ($this->filter_should_apply($action, $options) && !$this->filter_should_skip(static::$skip_before_action, $filter, $action)) {
@@ -103,7 +103,7 @@ class ActionController
     }
   }
 
-  protected function normalize_filter_array($filters)
+  protected function normalize_filter_array(array $filters)
   {
     $normalized_filters = [];
 
