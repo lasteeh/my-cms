@@ -52,8 +52,6 @@ class Request
           // set Request controller
           $this->CONTROLLER['name'] = $controller_name;
           $this->CONTROLLER['action'] = $controller_action;
-        } else {
-          $this->ERRORS = ['Requested route not found'];
         }
       }
     }
