@@ -5,7 +5,7 @@ namespace Core\Components;
 class Request
 {
   public $URI = '/';
-  public $PARAMETER;
+  public $PARAMETER = null;
   public $METHOD = 'GET';
   public $CONTROLLER = [
     'name' => 'application',
@@ -43,7 +43,7 @@ class Request
         // and if the HTTP method matches the specified method.
         if ($_SERVER['REQUEST_METHOD'] === $method && preg_match($route_pattern, $this->URI, $matches)) {
           // set Request parameter
-          $this->PARAMETER = $matches[1];
+          $this->PARAMETER = $matches[1] ?? null;
           // set Request method
           $this->METHOD = $method;
           // split the controller and action from the route information.
