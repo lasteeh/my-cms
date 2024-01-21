@@ -2,6 +2,8 @@
 
 namespace Core\Components;
 
+use Core\App;
+use Core\Components\ActionView;
 use App\Controllers\ApplicationController;
 
 class ActionController
@@ -84,6 +86,32 @@ class ActionController
     }
 
     return false;
+  }
+
+  public function not_found()
+  {
+    $page_info = [
+      'page_title' => 'Page Not Found',
+    ];
+    $this->render($page_info);
+  }
+
+  public function render(array $page_info = [])
+  {
+    // Use debug_backtrace() to get the calling function's name
+    $backtrace = debug_backtrace();
+    $calling_function = $backtrace[1]['function'];
+    $action = $calling_function;
+
+    $controller = get_class($this);
+
+    $page = new ActionView($controller, $action);
+    $page->prepare($page_info);
+    $page->view();
+  }
+
+  public function redirect()
+  {
   }
 
   public function execute(string $action)
