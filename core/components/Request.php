@@ -11,6 +11,7 @@ class Request
     'name' => 'application',
     'action' => 'index',
   ];
+  public $ERRORS = [];
 
   public function __construct($root_url = null, $configured_routes = [])
   {
@@ -51,6 +52,8 @@ class Request
           // set Request controller
           $this->CONTROLLER['name'] = $controller_name;
           $this->CONTROLLER['action'] = $controller_action;
+        } else {
+          $this->ERRORS = ['Requested route not found'];
         }
       }
     }
