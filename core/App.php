@@ -25,7 +25,7 @@ class App
 
   public function run(Request $request)
   {
-
+    // ******* refactor later to make own function handle error ******* 
     // fetch controller
     list($controller, $errors) = $this->fetch_controller($request);
 

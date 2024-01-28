@@ -110,8 +110,10 @@ class ActionController
     $page->view();
   }
 
-  public function redirect()
+  public function redirect(string $url = '/')
   {
+    header("Location:" . App::$ROOT_URL . $url);
+    exit();
   }
 
   public function execute(string $action)
