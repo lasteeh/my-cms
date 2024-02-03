@@ -1,6 +1,6 @@
 <?php
 
-require_once "../core/Autoloader.php";
+require_once "../vendor/Autoloader.php";
 Autoloader::register();
 
 use Core\App;

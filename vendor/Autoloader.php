@@ -10,7 +10,7 @@ class Autoloader
 
   public static function autoload($class_name)
   {
-    $class_file = str_replace('core', '', __DIR__) . str_replace('\\', '/', $class_name) . '.php';
+    $class_file = str_replace('vendor', '', __DIR__) . str_replace('\\', '/', $class_name) . '.php';
 
     if (file_exists($class_file)) {
       require_once $class_file;
