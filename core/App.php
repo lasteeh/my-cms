@@ -2,7 +2,7 @@
 
 namespace Core;
 
-use Core\Components\Request;
+use Core\Request;
 
 class App
 {
@@ -23,7 +23,12 @@ class App
     self::$ROUTES = file_exists(self::$ROOT_DIR . self::ROUTES_FILE_PATH) ? require_once self::$ROOT_DIR . self::ROUTES_FILE_PATH : [];
   }
 
-  public function run(Request $request)
+  public function run()
+  {
+    session_start();
+  }
+
+  public function execute(Request $request)
   {
     // ******* refactor later to make own function handle error ******* 
     // fetch controller
