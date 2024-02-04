@@ -3,24 +3,50 @@
 namespace Core;
 
 use Core\Request;
+use Core\ErrorHandler;
 
 class App
 {
-  // names the directory the files are in
+  use ErrorHandler;
+
+  /** DO NOT EDIT *************************************************************************************/
+  // directory name of where the App Class is in relative to the root directory of the project
   protected const APP_DIR = 'core';
+
+  // directory name of the application controllers
+  protected const APP_CONTROLLER_DIR = 'app/controllers';
+
+  // file path of the Routes configuration relative to the root directory of the project
   protected const ROUTES_FILE_PATH = 'config/routes.php';
-  // requires the forward slash infront for URL normalization that goes with the routes!
-  protected const INDEX_FILE_PATH = '/public/index.php';
+
+  // file path of the index.php file that serves as the funnel
+  protected const INDEX_FILE_PATH = 'public/index.php';
+
+  // NOTE: directory/path names must NOT have slashed in front
+  /****************************************************************************************************/
 
   public static $ROOT_DIR;
   public static $ROOT_URL;
   public static $ROUTES = [];
+  public array $ERRORS = [];
 
   public function __construct()
   {
     self::$ROOT_DIR = str_replace(self::APP_DIR, '', __DIR__);
-    self::$ROOT_URL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . str_replace(self::INDEX_FILE_PATH, '', $_SERVER['SCRIPT_NAME']);
-    self::$ROUTES = file_exists(self::$ROOT_DIR . self::ROUTES_FILE_PATH) ? require_once self::$ROOT_DIR . self::ROUTES_FILE_PATH : [];
+    self::$ROOT_URL = $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST'] . str_replace('/' . self::INDEX_FILE_PATH, '', $_SERVER['SCRIPT_NAME']);
+
+
+    $routes_config_file = self::$ROOT_DIR . self::ROUTES_FILE_PATH;
+    if (file_exists($routes_config_file)) {
+      self::$ROUTES = require_once $routes_config_file;
+    } else {
+      $this->$ERRORS[] = "File not found: {$routes_config_file}";
+
+      // set fallback routes
+      self::$ROUTES = [];
+    }
+
+    set_exception_handler([$this, 'exception_handler']);
   }
 
   public function run()
@@ -30,35 +56,44 @@ class App
 
   public function execute(Request $request)
   {
-    // ******* refactor later to make own function handle error ******* 
-    // fetch controller
-    list($controller, $errors) = $this->fetch_controller($request);
-
-    if ($errors) {
-      // handle errors: controller 404 
-      return;
-    }
-
-    // handle controller action
+    $controller = $this->fetch_controller($request);
     $action = $request->CONTROLLER['action'];
 
-    if (method_exists($controller, $action)) {
-      $controller->execute($action);
-      return;
+    $this->run_controller_action($controller, $action);
+    $this->run_error_check();
+  }
+
+
+  protected function fetch_controller(Request $request)
+  {
+    // set the namespace for the controller
+    $controller_namespace = implode('\\', array_map('ucfirst', explode('/', self::APP_CONTROLLER_DIR)));
+
+    $controller_name = $controller_namespace . '\\' . ucfirst($request->CONTROLLER['name']) . 'Controller';
+
+    $controller_name = '123123';
+
+    if (class_exists($controller_name)) {
+      return new $controller_name;
     } else {
-      // handle errors: controller action 404 
-      $controller->execute('not_found');
-      return;
+      $this->ERRORS[] = "Controller not found: \"{$controller_name}\"";
+      throw new \Exception(__FILE__ . ':' . __LINE__);
     }
   }
 
-  public function fetch_controller(Request $request)
+  protected function run_controller_action(?object $controller, string $action)
   {
-    $controller_name = 'App\\Controllers\\' . ucfirst($request->CONTROLLER['name']) . 'Controller';
-
-    if (class_exists($controller_name)) {
-      return [new $controller_name, null];
+    if (!is_object($controller) || $controller === null || !$controller) {
+      $this->ERRORS[] = "Controller not found: \"{$controller}\"";
+      throw new \Exception(__FILE__ . ':' . __LINE__);
+      return;
     }
-    return [null, ['Controller not found.']];
+
+    if (method_exists($controller, $action)) {
+      $controller->$action();
+    } else {
+      $this->ERRORS[] = "Action not found: \"{$action}\"";
+      throw new \Exception(__FILE__ . ':' . __LINE__);
+    }
   }
 }
