@@ -85,7 +85,6 @@ class App
     if (!is_object($controller) || $controller === null || !$controller) {
       $this->ERRORS[] = "Controller not found: \"{$controller}\"";
       throw new CMSException();
-      return;
     }
 
     if (method_exists($controller, $action)) {
