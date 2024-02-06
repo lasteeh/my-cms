@@ -3,7 +3,8 @@
 namespace Core;
 
 use Core\Request;
-use Core\ErrorHandler;
+use Core\Traits\ErrorHandler;
+use Core\Components\CMSException;
 
 class App
 {
@@ -71,13 +72,11 @@ class App
 
     $controller_name = $controller_namespace . '\\' . ucfirst($request->CONTROLLER['name']) . 'Controller';
 
-    $controller_name = '123123';
-
     if (class_exists($controller_name)) {
       return new $controller_name;
     } else {
       $this->ERRORS[] = "Controller not found: \"{$controller_name}\"";
-      throw new \Exception(__FILE__ . ':' . __LINE__);
+      throw new CMSException();
     }
   }
 
@@ -85,7 +84,7 @@ class App
   {
     if (!is_object($controller) || $controller === null || !$controller) {
       $this->ERRORS[] = "Controller not found: \"{$controller}\"";
-      throw new \Exception(__FILE__ . ':' . __LINE__);
+      throw new CMSException();
       return;
     }
 
@@ -93,7 +92,7 @@ class App
       $controller->$action();
     } else {
       $this->ERRORS[] = "Action not found: \"{$action}\"";
-      throw new \Exception(__FILE__ . ':' . __LINE__);
+      throw new CMSException();
     }
   }
 }
