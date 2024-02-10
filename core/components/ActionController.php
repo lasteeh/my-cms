@@ -2,11 +2,12 @@
 
 namespace Core\Components;
 
+use Core\Base;
 use Core\App;
 use Core\Components\ActionView;
 use App\Controllers\ApplicationController;
 
-class ActionController
+class ActionController extends Base
 {
   protected static $skip_before_action = [];
   protected static $before_action = [];
@@ -112,7 +113,7 @@ class ActionController
 
   public function redirect(string $url = '/')
   {
-    header("Location:" . App::$ROOT_URL . $url);
+    header("Location:" . self::$ROOT_URL . $url);
     exit();
   }
 

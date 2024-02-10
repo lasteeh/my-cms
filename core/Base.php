@@ -12,15 +12,14 @@ class Base
   // directory names
   protected const CORE_DIR = 'core';
   protected const APP_DIR = 'app';
-  protected const CONTROLLER_DIR = 'controllers';
-  protected const MODEL_DIR = 'models';
-  protected const VIEW_DIR = 'views';
+  protected const CONTROLLERS_DIR = 'controllers';
+  protected const MODELS_DIR = 'models';
+  protected const VIEWS_DIR = 'views';
   protected const CONFIG_DIR = 'config';
   protected const INDEX_FILE_PATH = 'public/index.php';
 
   private static $ENV_LOADED = false;
   private static $ERROR_HANDLER_SET = false;
-
   /****************************************************************************************************/
 
   public static $ROOT_DIR;

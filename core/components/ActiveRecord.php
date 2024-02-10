@@ -2,6 +2,8 @@
 
 namespace Core\Components;
 
-class ActiveRecord
+use Core\Base;
+
+class ActiveRecord extends Base
 {
 }

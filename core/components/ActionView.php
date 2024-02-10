@@ -2,46 +2,43 @@
 
 namespace Core\Components;
 
+use Core\Base;
 use Core\App;
 
-class ActionView
+class ActionView extends Base
 {
-  private const VIEWS_DIR = 'app\\views\\';
   private const VIEW_FILE_EXT = '.view.php';
   private const LAYOUTS_DIR = 'layouts\\';
 
-  private const DEFAULT_ACTION = 'not_found';
-  private const DEFAULT_CONTROLLER_NAME = 'App\\Controllers\\ApplicationController';
-
-  protected string $controller_views_directory = 'application\\';
-  protected string $controller_action = self::DEFAULT_ACTION;
+  protected string $controller_views_directory;
+  protected string $controller_action;
 
   public string $page_title = '';
 
 
-  public function __construct(string $controller_name = self::DEFAULT_CONTROLLER_NAME, $action = self::DEFAULT_ACTION)
+  public function __construct(string $controller_name, string $action)
   {
     $this->controller_views_directory = $this->construct_controller_views_directory($controller_name);
     $this->controller_action = $action;
   }
 
 
-  public function VIEWS_DIR()
+  protected function VIEWS_DIR()
   {
-    return App::$ROOT_DIR . self::VIEWS_DIR;
+    return self::$ROOT_DIR . self::APP_DIR . '\\' . self::VIEWS_DIR . '\\';
   }
 
-  public function construct_controller_views_directory(string $controller_name = self::DEFAULT_CONTROLLER_NAME)
+  public function construct_controller_views_directory(string $controller_name)
   {
-    $controller_name = str_replace('App\\', '', $controller_name);
-    $controller_name = str_replace('Controllers\\', '', $controller_name);
+    $controller_name = str_replace(ucfirst(self::APP_DIR) . '\\', '', $controller_name);
+    $controller_name = str_replace(ucfirst(self::CONTROLLERS_DIR) . '\\', '', $controller_name);
     $controller_name = str_replace('Controller', '', $controller_name);
     $controller_name = strtolower($controller_name) . '\\';
 
     return $controller_name;
   }
 
-  protected function get_view_file(string $action = self::DEFAULT_ACTION)
+  protected function get_view_file(string $action)
   {
     return $this->VIEWS_DIR() . $this->controller_views_directory . $action . self::VIEW_FILE_EXT;
   }
@@ -56,8 +53,8 @@ class ActionView
       return $layout_file;
     } else {
       // handle errors: layout file 404
-      echo 'layout does not exist';
-      return;
+      $this->ERRORS[] = "Layout file not found: {$layout_file}";
+      $this->handle_errors();
     }
   }
 
@@ -75,9 +72,11 @@ class ActionView
 
     if (file_exists($view_file)) {
       include $layout_file;
+      exit;
     } else {
       // handle errors: view file 404
-      echo 'view file does not exist';
+      $this->ERRORS[] = "View file not found: {$view_file}";
+      $this->handle_errors();
       return;
     }
   }

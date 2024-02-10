@@ -56,7 +56,7 @@ class App extends Base
   protected function fetch_controller(Request $request)
   {
     // set the namespace for the controller and get controller name
-    $controller_namespace = implode('\\', array_map('ucfirst', explode('/', self::APP_DIR . '/' . self::CONTROLLER_DIR)));
+    $controller_namespace = implode('\\', array_map('ucfirst', explode('/', self::APP_DIR . '/' . self::CONTROLLERS_DIR)));
     $controller_name = $controller_namespace . '\\' . ucfirst($request->CONTROLLER['name']) . 'Controller';
 
     if (class_exists($controller_name)) {
