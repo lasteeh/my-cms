@@ -2,7 +2,9 @@
 
 namespace Core;
 
-class Request
+use Core\Base;
+
+class Request extends Base
 {
   public ?string $URI = null;
   public string $METHOD = 'GET'; // set 'GET' as fallback request method
@@ -12,20 +14,19 @@ class Request
     'name' => 'application', // set 'application' fallback controller name
     'action' => 'not_found', // set 'not_found' fallback controller action
   ];
-  public array $ERRORS = [];
 
-  protected ?string $SERVER_REQUEST_URI = null;
-  protected ?string $ROOT_URL = null;
-  protected array $CONFIGURED_ROUTES = [];
+  private ?string $SERVER_REQUEST_URI = null;
+  private array $CONFIGURED_ROUTES = [];
 
-  public function __construct(string $server_request_uri = null, string $root_url = null, array $configured_routes = [])
+  public function __construct(string $server_request_uri = null, array $configured_routes = [])
   {
+    parent::__construct();
+
     $this->SERVER_REQUEST_URI = $server_request_uri;
     $this->CONFIGURED_ROUTES = $configured_routes;
-    $this->ROOT_URL = $root_url;
 
     // create custom request uri
-    $this->create_URI($root_url);
+    $this->create_URI(self::$ROOT_URL);
     // configure the Request with request method, parameter, and controller info based on configured routes
     $this->configure_request($this->CONFIGURED_ROUTES);
   }

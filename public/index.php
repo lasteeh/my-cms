@@ -7,7 +7,7 @@ use Core\App;
 use Core\Request;
 
 $app = new App();
-$request = new Request($_SERVER['REQUEST_URI'], App::$ROOT_URL, App::$ROUTES);
-
 $app->run();
+
+$request = new Request($_SERVER['REQUEST_URI'], App::$ROUTES);
 $app->execute($request);

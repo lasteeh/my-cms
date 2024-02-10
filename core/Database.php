@@ -2,38 +2,26 @@
 
 namespace Core;
 
-use Core\Components\CMSException;
-use Core\Traits\ErrorHandler;
+use Core\Base;
 
-class Database
+class Database extends Base
 {
-  use ErrorHandler;
-
-  /** DO NOT EDIT *************************************************************************************/
-  // file path of the Database configuration relative to the root directory of the project
-  private const DB_CONFIG_FILE_PATH = "config/database.php";
-
-  // NOTE: directory/path names must NOT have slashes in front
-  /****************************************************************************************************/
-
   private static string $NAME;
   private static string $HOST;
   private static string $USERNAME;
   private static string $PASSWORD;
 
   public static $PDO;
-  public array $ERRORS = [];
 
   public function __construct()
   {
-    set_exception_handler([$this, 'exception_handler']);
+    parent::__construct();
 
-    $this->load_db_config();
-
-    self::$NAME = "your_database_name";
-    self::$HOST = "your_database_host";
-    self::$USERNAME = "your_database_username";
-    self::$PASSWORD = "your_database_password";
+    $config = $this->load_db_config();
+    self::$NAME = $config['db_name'];
+    self::$HOST = $config['db_host'];
+    self::$USERNAME = $config['db_username'];
+    self::$PASSWORD = $config['db_password'];
   }
 
   public function PDO()
@@ -49,20 +37,20 @@ class Database
     if (self::$PDO === null) {
       self::$PDO = $this->create_pdo_instance();
     }
-
     return self::$PDO !== null;
   }
 
   private function load_db_config()
   {
-    $db_config_file = App::$ROOT_DIR . self::DB_CONFIG_FILE_PATH;
+    $db_config_file = self::$ROOT_DIR . self::CONFIG_DIR . '/database.php';
+
     if (file_exists($db_config_file)) {
       $db_configurations = require_once $db_config_file;
 
-      // map the config to the private variable creds
+      return $db_configurations;
     } else {
       $this->ERRORS[] = "File not found: {$db_config_file}";
-      throw new CMSException();
+      $this->handle_errors();
     }
   }
 
@@ -75,7 +63,7 @@ class Database
       return $pdo;
     } catch (\PDOException $e) {
       $this->ERRORS[] = "PDO instance creation failed";
-      throw new CMSException($e->getMessage());
+      $this->handle_errors($e->getMessage());
     }
   }
 }
