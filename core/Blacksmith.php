@@ -149,12 +149,11 @@ class Blacksmith extends Base
 
     $file_content = "<?php namespace App\Models;
 
-    use App\Models\Application_Record;
+use App\Models\Application_Record;
 
-    class {$formatted_name} extends Application_Record
-    {
-    }
-    ";
+class {$formatted_name} extends Application_Record
+{
+}";
 
     $this->create_file($file_name, $file_content);
   }
@@ -181,24 +180,23 @@ class Blacksmith extends Base
 
     foreach ($actions as $action) {
       $action_definitions .= "public function {$action}()
-      {
-        // insert action logic here
-      }
+  {
+    /* insert controller action logic here */
+  }
 
-      ";
+  ";
     }
 
     $file_content = "<?php namespace App\Controllers;
 
-    use App\Controllers\ApplicationController;
+use App\Controllers\ApplicationController;
 
-    class {$formatted_name} extends ApplicationController
-    {
+class {$formatted_name} extends ApplicationController
+{
 
-      {$action_definitions}
+  {$action_definitions}
 
-    }
-    ";
+}";
 
     $this->create_file($file_name, $file_content);
 
