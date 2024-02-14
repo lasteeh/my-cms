@@ -30,10 +30,17 @@ class ActionView extends Base
 
   public function construct_controller_views_directory(string $controller_name)
   {
-    $controller_name = str_replace(ucfirst(self::APP_DIR) . '\\', '', $controller_name);
-    $controller_name = str_replace(ucfirst(self::CONTROLLERS_DIR) . '\\', '', $controller_name);
-    $controller_name = str_replace('Controller', '', $controller_name);
-    $controller_name = strtolower($controller_name) . '\\';
+    // old name creation
+    // $controller_name = str_replace(ucfirst(self::APP_DIR) . '\\', '', $controller_name);
+    // $controller_name = str_replace(ucfirst(self::CONTROLLERS_DIR) . '\\', '', $controller_name);
+    // $controller_name = str_replace('Controller', '', $controller_name);
+    // $controller_name = strtolower($controller_name) . '\\';
+
+    // new name creation
+    $controller_name = preg_replace('/^.*\\\\/', '', $controller_name); // remove namespace
+    $controller_name = str_replace('Controller', '', $controller_name); // remove 'Controller'
+    $controller_name = preg_replace('/(?<!^)([A-Z])/', '_$1', $controller_name); // camelcase to underscore
+    $controller_name = strtolower($controller_name) . "\\"; // convert to lowercase
 
     return $controller_name;
   }
