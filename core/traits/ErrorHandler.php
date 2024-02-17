@@ -12,8 +12,8 @@ trait ErrorHandler
 
     // Get the backtrace information
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-    $calling_file = $trace[0]['file'] ?? 'Exception';
-    $calling_line = $trace[0]['line'] ?? 'Exception';
+    $calling_file = $trace[0]['file'] ?? 'Fatal';
+    $calling_line = $trace[0]['line'] ?? 'Error';
 
     $html = '<!DOCTYPE html>';
     $html .= '<html lang="en">';
