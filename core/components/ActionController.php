@@ -3,7 +3,6 @@
 namespace Core\Components;
 
 use Core\Base;
-use Core\App;
 use Core\Components\ActionView;
 use App\Controllers\ApplicationController;
 
