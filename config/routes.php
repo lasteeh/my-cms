@@ -14,19 +14,16 @@ return [
    * ] 
    ***/
 
-  '/test' => [
-    'GET' => 'application@index',
-    'POST' => 'application@create',
+  '/register' => [
+    'GET' => 'users@new',
   ],
-  '/test/new' => [
-    'GET' => 'application@new',
+
+  '/login' => [
+    'GET' => 'sessions@new',
   ],
-  '/test/:id' => [
-    'GET' => 'application@show',
-    'PATCH' => 'application@update',
-    'DELETE' => 'application@delete',
-  ],
-  '/test/:id/edit' => [
-    'GET' => 'application@index',
+
+  '/users' => [
+    'GET' => 'users@index',
+    'POST' => 'users@create',
   ],
 ];
