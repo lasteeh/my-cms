@@ -8,6 +8,8 @@ use App\Controllers\ApplicationController;
 
 class ActionController extends Base
 {
+  protected array $PAGE_INFO = [];
+
   protected static $skip_before_action = [];
   protected static $before_action = [];
   protected static $skip_after_action = [];
@@ -90,23 +92,25 @@ class ActionController extends Base
 
   public function not_found()
   {
-    $page_info = [
+    $this->PAGE_INFO = [
       'page_title' => 'Page Not Found',
     ];
-    $this->render($page_info);
+    $this->render();
   }
 
-  public function render(array $page_info = [])
+  public function render(string $action = '')
   {
     // Use debug_backtrace() to get the calling function's name
-    $backtrace = debug_backtrace();
-    $calling_function = $backtrace[1]['function'];
-    $action = $calling_function;
+    if ($action === '' || $action === null) {
+      $backtrace = debug_backtrace();
+      $calling_function = $backtrace[1]['function'];
+      $action = $calling_function;
+    }
 
     $controller = get_class($this);
 
     $page = new ActionView($controller, $action);
-    $page->prepare($page_info);
+    $page->prepare($this->PAGE_INFO, $this->ERRORS);
     $page->view();
   }
 
