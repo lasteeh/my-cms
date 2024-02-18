@@ -66,9 +66,11 @@ class ActionView extends Base
   }
 
 
-  public function prepare(array $page_info = [])
+  public function prepare(array $page_info = [], array $page_errors = [])
   {
     $this->page_title = isset($page_info['page_title']) && is_string($page_info['page_title']) ? $page_info['page_title'] : '';
+
+    $this->ERRORS = $page_errors;
   }
 
 
@@ -86,5 +88,10 @@ class ActionView extends Base
       $this->handle_errors();
       return;
     }
+  }
+
+  public function url(string $path)
+  {
+    echo $this::$ROOT_URL . $path;
   }
 }
