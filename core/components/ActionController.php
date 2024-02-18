@@ -15,6 +15,8 @@ class ActionController extends Base
   protected static $skip_after_action = [];
   protected static $after_action = [];
 
+  private array $OBJECTS = [];
+
   public function __construct()
   {
     $this->get_before_action_filters();
@@ -23,7 +25,7 @@ class ActionController extends Base
     $this->get_skip_after_action_filters();
   }
 
-  public function get_before_action_filters()
+  protected function get_before_action_filters()
   {
     $all_before_action = array_merge(
       self::$before_action,
@@ -34,7 +36,7 @@ class ActionController extends Base
     static::$before_action = $this->normalize_filter_array($all_before_action);
   }
 
-  public function get_skip_before_action_filters()
+  protected function get_skip_before_action_filters()
   {
     $all_skip_before_action = array_merge(
       self::$skip_before_action,
@@ -44,7 +46,7 @@ class ActionController extends Base
 
     static::$skip_before_action = $this->normalize_filter_array($all_skip_before_action);
   }
-  public function get_after_action_filters()
+  protected function get_after_action_filters()
   {
     $all_after_action = array_merge(
       self::$after_action,
@@ -55,7 +57,7 @@ class ActionController extends Base
     static::$after_action = $this->normalize_filter_array($all_after_action);
   }
 
-  public function get_skip_after_action_filters()
+  protected function get_skip_after_action_filters()
   {
     $all_skip_after_action = array_merge(
       self::$skip_after_action,
@@ -66,14 +68,14 @@ class ActionController extends Base
     static::$skip_after_action = $this->normalize_filter_array($all_skip_after_action);
   }
 
-  public function filter_should_apply(string $action, array $options = [])
+  protected function filter_should_apply(string $action, array $options = [])
   {
     return empty($options) ||
       (isset($options['only']) && in_array($action, $options['only'])) ||
       (isset($options['except']) && !in_array($action, $options['except']));
   }
 
-  public function filter_should_skip($skip_filters, $filter, string $action)
+  protected function filter_should_skip($skip_filters, $filter, string $action)
   {
     if (isset($skip_filters[$filter])) {
       $skip_before_filter = $skip_filters[$filter];
@@ -110,7 +112,7 @@ class ActionController extends Base
     $controller = get_class($this);
 
     $page = new ActionView($controller, $action);
-    $page->prepare($this->PAGE_INFO, $this->ERRORS);
+    $page->prepare($this->PAGE_INFO, $this->ERRORS, $this->OBJECTS);
     $page->view();
   }
 
@@ -146,5 +148,10 @@ class ActionController extends Base
     }
 
     return $normalized_filters;
+  }
+
+  protected function set_object(string $name, $object)
+  {
+    $this->OBJECTS[$name] = $object;
   }
 }

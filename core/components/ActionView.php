@@ -10,6 +10,8 @@ class ActionView extends Base
   private const VIEW_FILE_EXT = '.view.php';
   private const LAYOUTS_DIR = 'layouts\\';
 
+  private array $OBJECTS = [];
+
   protected string $controller_views_directory;
   protected string $controller_action;
 
@@ -66,11 +68,18 @@ class ActionView extends Base
   }
 
 
-  public function prepare(array $page_info = [], array $page_errors = [])
+  public function prepare(array $page_info = [], array $page_errors = [], array $objects = [])
   {
     $this->page_title = isset($page_info['page_title']) && is_string($page_info['page_title']) ? $page_info['page_title'] : '';
 
     $this->ERRORS = $page_errors;
+
+    $this->OBJECTS = $objects;
+  }
+
+  public function get_object(string $name)
+  {
+    return $this->OBJECTS[$name];
   }
 
 
