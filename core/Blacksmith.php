@@ -2,12 +2,14 @@
 
 namespace Core;
 
+use App\Models\User;
 use DateTime;
 
 class Blacksmith extends Base
 {
   /* ALLOWED FILE TYPES FOR CREATION ********************************************************/
   private static $FILE_TYPE = ['migration', 'model', 'controller'];
+  private static $MODEL_TYPE = ['user'];
   /******************************************************************************************/
 
 
@@ -52,6 +54,21 @@ class Blacksmith extends Base
         break;
       default:
         $this->show_usage('make');
+        exit(1);
+    }
+  }
+
+  public function register(string $model_type, $parameters = [])
+  {
+    $db = new Database;
+    $db->PDO();
+
+    switch ($model_type) {
+      case self::$MODEL_TYPE[0]:
+        $this->register_user($parameters);
+        break;
+      default:
+        $this->show_usage('register');
         exit(1);
     }
   }
@@ -110,7 +127,7 @@ class Blacksmith extends Base
     switch ($function) {
       case 'make':
         echo "\n";
-        echo "Usage: php make.php <file_type> <file_name> [action1 action2 ...]\n";
+        echo "Usage: php make.php <file_type> <file_name> [parameter1 parameter2 ...]\n";
         echo "\n";
         echo "Valid file types:\n";
         echo " - migration\n";
@@ -123,6 +140,21 @@ class Blacksmith extends Base
         echo "NOTE:\n";
         echo "File name should only have letters and underscores.\n";
         echo "Action names are optional for the 'controller' file type.\n";
+        echo "\n";
+        break;
+      case 'register':
+        echo "\n";
+        echo "Usage: php register.php <model_type> [parameters...]\n";
+        echo "\n";
+        echo "Valid model types:\n";
+        echo " - user\n";
+        echo "\n";
+        echo "Examples:\n";
+        echo " php register.php user\n";
+        echo "\n";
+        echo "NOTE:\n";
+        echo "Parameters should follow specific rules.\n";
+        echo "Parameters are not accepted for user models.\n";
         echo "\n";
         break;
       default:
@@ -256,6 +288,46 @@ class {$formatted_name} extends ApplicationController
       // }
     } else {
       echo "Failed to create file: {$file_name}\n";
+    }
+  }
+
+  private function register_user(array $parameters)
+  {
+    if (!empty($parameters)) {
+      die("Parameters are not accepted for user.\n");
+    }
+
+    $email = readline("Enter email address: ");
+
+    // check if email or password is empty
+    if (empty($email)) {
+      die("Email is required. \n");
+    }
+
+    // validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+      die("Invalid email format. \n");
+    }
+
+    $password = readline("Enter password: ");
+
+    // validate password strength (at least 8 characters)
+    if (strlen($password) < 8) {
+      die("Password must be at least 8 characters long.\n");
+    }
+
+    $user = new User;
+    $user_params = [
+      'email' => $email, 'password' => $password, 'password_confirmation' => $password
+    ];
+    list($user, $error_messages) = $user->register($user_params);
+
+    if ($error_messages) {
+      foreach ($error_messages as $error) {
+        echo $error . " \n";
+      }
+    } else {
+      echo "User successfully registered.";
     }
   }
 
