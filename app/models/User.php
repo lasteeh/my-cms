@@ -28,6 +28,7 @@ class User extends Application_Record
 
   protected static $before_save = [
     'remove_password_confirmation_attribute',
+    'hash_password',
   ];
 
   public function register(array $user_params): array
@@ -41,5 +42,11 @@ class User extends Application_Record
   protected function remove_password_confirmation_attribute()
   {
     $this->remove_attribute('password_confirmation');
+  }
+
+  protected function hash_password()
+  {
+    $hashed_password = password_hash($this->password, PASSWORD_BCRYPT);
+    $this->update_attribute('password', $hashed_password);
   }
 }
