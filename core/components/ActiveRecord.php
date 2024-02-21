@@ -36,6 +36,7 @@ class ActiveRecord extends Base
 
     // setup callbacks
     $this->get_before_save_callbacks();
+    $this->get_skip_before_save_callbacks();
   }
 
   protected function get_before_save_callbacks()
@@ -135,6 +136,11 @@ class ActiveRecord extends Base
   protected function remove_attribute(string $attribute)
   {
     unset($this->ATTRIBUTES["{$attribute}"]);
+  }
+
+  protected function update_attribute(string $attribute, $value)
+  {
+    $this->ATTRIBUTES["{$attribute}"] = $value;
   }
 
   public function find_by($column, $value)
