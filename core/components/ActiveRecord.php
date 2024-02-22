@@ -102,7 +102,7 @@ class ActiveRecord extends Base
         }
 
         if ($rule === 'uniqueness' && $value === true) {
-          $existing_record = $this->find_by($field, $this->ATTRIBUTES[$field]);
+          $existing_record = $this->find_uniquness_by($field, $this->ATTRIBUTES[$field]);
 
           if ($existing_record) {
             $errors[] = "{$field} '{$this->ATTRIBUTES[$field]}' already exists.";
@@ -149,6 +149,33 @@ class ActiveRecord extends Base
 
     $statement = self::$DB->prepare($sql);
     $statement->bindParam(':value', $value);
+    $statement->execute();
+
+    $record = $statement->fetch(\PDO::FETCH_ASSOC);
+
+    return $record;
+  }
+
+  public function find_uniquness_by($column, $value)
+  {
+    $sql = "SELECT id FROM {$this->TABLE} WHERE {$column} = :value";
+
+    $statement = self::$DB->prepare($sql);
+    $statement->bindParam(':value', $value);
+    $statement->execute();
+
+    $record = $statement->fetch(\PDO::FETCH_ASSOC);
+
+    return $record;
+  }
+
+  // TODO: replace with query builder!!!
+  public function find_user_by_email(string $email)
+  {
+    $sql = "SELECT id, email, password FROM {$this->TABLE} WHERE email = :value";
+
+    $statement = self::$DB->prepare($sql);
+    $statement->bindParam(':value', $email);
     $statement->execute();
 
     $record = $statement->fetch(\PDO::FETCH_ASSOC);
@@ -207,6 +234,7 @@ class ActiveRecord extends Base
     }
 
     // run after save
+
     return true;
   }
 

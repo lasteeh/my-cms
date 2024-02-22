@@ -49,4 +49,23 @@ class User extends Application_Record
     $hashed_password = password_hash($this->password, PASSWORD_BCRYPT);
     $this->update_attribute('password', $hashed_password);
   }
+
+  public function login(array $login_params): array
+  {
+    $user = $this->find_user_by_email($login_params['email']);
+
+    if ($user) {
+      if (password_verify($login_params['password'], $user['password'])) {
+        $_SESSION['user_id'] = $user['id'];
+
+        return [$user, null];
+      } else {
+        $this->ERRORS[] = 'invalid password';
+        return [null, $this->ERRORS];
+      }
+    } else {
+      $this->ERRORS[] = 'invalid email';
+      return [null, $this->ERRORS];
+    }
+  }
 }

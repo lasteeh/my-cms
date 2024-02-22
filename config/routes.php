@@ -14,16 +14,12 @@ return [
    * ] 
    ***/
 
-  '/register' => [
-    'GET' => 'users@new',
-  ],
-
   '/login' => [
     'GET' => 'sessions@new',
+    'POST' => 'sessions@create',
   ],
 
   '/users' => [
-    'GET' => 'users@index',
     'POST' => 'users@create',
   ],
 ];
