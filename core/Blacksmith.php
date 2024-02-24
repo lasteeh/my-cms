@@ -312,8 +312,8 @@ class {$formatted_name} extends ApplicationController
     $password = readline("Enter password: ");
 
     // validate password strength (at least 8 characters)
-    if (strlen($password) < 8) {
-      die("Password must be at least 8 characters long.\n");
+    if (strlen($password) < 1) {
+      die("Password is required.\n");
     }
 
     $user = new User;
