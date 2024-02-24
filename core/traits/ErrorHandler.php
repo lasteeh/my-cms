@@ -6,7 +6,8 @@ use Throwable;
 
 trait ErrorHandler
 {
-  public static $ROOT_URL;
+  public array $ERRORS = [];
+  protected static $ENVIRONMENT = 'CLI';
 
   public function handle_errors($message = '')
   {
@@ -17,7 +18,7 @@ trait ErrorHandler
     $calling_file = $trace[0]['file'] ?? 'Fatal';
     $calling_line = $trace[0]['line'] ?? 'Error';
 
-    if (self::$ROOT_URL !== 'CLI') {
+    if (self::$ENVIRONMENT === 'HTML') {
       $this->show_html_errors($number_of_errors, $message, $calling_file, $calling_line);
     } else {
       $this->show_cli_errors($number_of_errors, $message, $calling_file, $calling_line);

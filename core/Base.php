@@ -20,13 +20,12 @@ class Base
   protected const MIGRATIONS_DIR = 'migrations';
   protected const INDEX_FILE_PATH = 'public/index.php';
 
+  protected static $ROOT_URL;
+  protected static $ROOT_DIR;
+
   private static $ENV_LOADED = false;
   private static $ERROR_HANDLER_SET = false;
   /****************************************************************************************************/
-
-  public static $ROOT_DIR;
-  public static $ROOT_URL;
-  public array $ERRORS = [];
 
   public function __construct()
   {
@@ -39,9 +38,8 @@ class Base
     // initiate global variables
     self::$ROOT_DIR = str_replace(self::CORE_DIR, '', __DIR__);
     if (isset($_SERVER['REQUEST_SCHEME']) && isset($_SERVER['HTTP_HOST'])) {
+      self::$ENVIRONMENT = 'HTML';
       self::$ROOT_URL = ($_SERVER['REQUEST_SCHEME'] ?? 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost/') . str_replace('/' . self::INDEX_FILE_PATH, '', $_SERVER['SCRIPT_NAME']);
-    } else {
-      self::$ROOT_URL = 'CLI';
     }
 
     // set env variables
@@ -51,7 +49,7 @@ class Base
     }
   }
 
-  protected static function load_env_file()
+  private static function load_env_file()
   {
     $env_file = self::$ROOT_DIR .  ".env"; // file path to the .env file
 

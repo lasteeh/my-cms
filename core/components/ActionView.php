@@ -101,6 +101,6 @@ class ActionView extends Base
 
   public function url(string $path)
   {
-    echo $this::$ROOT_URL . $path;
+    echo static::$ROOT_URL . $path;
   }
 }
