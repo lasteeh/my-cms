@@ -15,6 +15,9 @@ class ActiveRecord extends Base
   private static $DB;
   private $ATTRIBUTES = [];
 
+  protected static $skip_before_validate = [];
+  protected static $before_validate = [];
+
   protected $validations = [];
 
   protected static $skip_before_save = [];
@@ -35,10 +38,32 @@ class ActiveRecord extends Base
     $this->create($model_object);
 
     // setup callbacks
+    $this->get_before_validate_callbacks();
+    $this->get_skip_before_validate_callbacks();
     $this->get_before_save_callbacks();
     $this->get_skip_before_save_callbacks();
   }
 
+  protected function get_before_validate_callbacks()
+  {
+    $all_before_validate = array_merge(
+      self::$before_validate,
+      Application_Record::$before_validate,
+      static::$before_validate
+    );
+
+    static::$before_validate = $this->normalize_callback_array($all_before_validate);
+  }
+  protected function get_skip_before_validate_callbacks()
+  {
+    $all_skip_before_validate = array_merge(
+      self::$skip_before_validate,
+      Application_Record::$skip_before_validate,
+      static::$skip_before_validate
+    );
+
+    static::$skip_before_validate = $this->normalize_callback_array($all_skip_before_validate);
+  }
   protected function get_before_save_callbacks()
   {
     $all_before_save = array_merge(
@@ -198,6 +223,11 @@ class ActiveRecord extends Base
   public function save(): bool
   {
     // run before validations
+    foreach (static::$before_validate as $callback) {
+      if (!$this->callback_should_skip($callback, static::$skip_before_validate)) {
+        $this->$callback();
+      }
+    }
 
     // run validations
     if (!$this->validate()) {
