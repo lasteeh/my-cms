@@ -34,6 +34,6 @@ class UsersController extends ApplicationController
 
   private function user_params(array $user_input): array
   {
-    return $this->permit(['email', 'password', 'password_confirmation'], $user_input);
+    return $this->params_permit(['email', 'password', 'password_confirmation'], $user_input);
   }
 }

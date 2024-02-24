@@ -156,7 +156,7 @@ class ActionController extends Base
   }
 
 
-  protected function permit(array $permitted_fields, $user_input): array
+  protected function params_permit(array $permitted_fields, $user_input): array
   {
     $params = [];
 

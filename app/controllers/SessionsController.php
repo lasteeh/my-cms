@@ -45,6 +45,6 @@ class SessionsController extends ApplicationController
 
   private function login_params(array $user_input): array
   {
-    return $this->permit(['email', 'password'], $user_input);
+    return $this->params_permit(['email', 'password'], $user_input);
   }
 }
