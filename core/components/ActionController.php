@@ -162,7 +162,7 @@ class ActionController extends Base
 
     foreach ($permitted_fields as $field) {
       if (isset($user_input[$field])) {
-        $login_params[$field] = $user_input[$field];
+        $params[$field] = $user_input[$field];
       }
     }
 
