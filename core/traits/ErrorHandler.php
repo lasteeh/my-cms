@@ -6,6 +6,8 @@ use Throwable;
 
 trait ErrorHandler
 {
+  public static $ROOT_URL;
+
   public function handle_errors($message = '')
   {
     $number_of_errors = count($this->ERRORS) > 1 ? 'Errors' : 'Error';
@@ -15,6 +17,38 @@ trait ErrorHandler
     $calling_file = $trace[0]['file'] ?? 'Fatal';
     $calling_line = $trace[0]['line'] ?? 'Error';
 
+    if (self::$ROOT_URL !== 'CLI') {
+      $this->show_html_errors($number_of_errors, $message, $calling_file, $calling_line);
+    } else {
+      $this->show_cli_errors($number_of_errors, $message, $calling_file, $calling_line);
+    }
+  }
+
+  private function show_cli_errors(string $number_of_errors, string $message, string $calling_file, string $calling_line)
+  {
+    echo "\n";
+    echo "{$number_of_errors} found!\n";
+
+    if (!empty($this->ERRORS)) {
+      foreach ($this->ERRORS as $error) {
+        echo htmlspecialchars($error) . "\n";
+      }
+    }
+
+    echo "{$number_of_errors} occurred during execution. Halting further execution.\n";
+
+    if ($message && $message instanceof Throwable) {
+      echo $message->getMessage() . "\n";
+    } elseif ($message && is_string($message)) {
+      echo   $message . "\n";
+    }
+
+    echo "{$calling_file}:{$calling_line}\n";
+    die;
+  }
+
+  private function show_html_errors(string $number_of_errors, string $message, string $calling_file, string $calling_line)
+  {
     $html = '<!DOCTYPE html>';
     $html .= '<html lang="en">';
     $html .= '<head>';
