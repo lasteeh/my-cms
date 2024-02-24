@@ -90,7 +90,7 @@ class App extends Base
     }
 
     if (method_exists($controller, $action)) {
-      $controller->$action();
+      $controller->execute($action);
     } else {
       $this->ERRORS[] = "Action not found: \"{$action}\"";
       $this->handle_errors();
