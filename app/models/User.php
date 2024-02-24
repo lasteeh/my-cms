@@ -10,6 +10,15 @@ class User extends Application_Record
   public string $password;
   public string $password_confirmation;
 
+  protected static $before_validate = [
+    'normalize_email',
+  ];
+
+  protected static $before_save = [
+    'remove_password_confirmation_attribute',
+    'hash_password',
+  ];
+
   protected $validations = [
     'email' => [
       'presence' => true,
@@ -26,17 +35,18 @@ class User extends Application_Record
     ],
   ];
 
-  protected static $before_save = [
-    'remove_password_confirmation_attribute',
-    'hash_password',
-  ];
-
   public function register(array $user_params): array
   {
     $this->create($user_params);
     $this->save();
 
     return [$this, $this->ERRORS];
+  }
+
+  protected function normalize_email()
+  {
+    $normalized_email = strtolower($this->email);
+    $this->update_attribute('email', $normalized_email);
   }
 
   protected function remove_password_confirmation_attribute()
