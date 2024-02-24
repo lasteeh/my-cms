@@ -24,7 +24,7 @@ class Database extends Base
     self::$PASSWORD = $config['db_password'];
   }
 
-  public function PDO()
+  public function PDO(): \PDO
   {
     if (self::$PDO === null) {
       self::$PDO = $this->create_pdo_instance();
