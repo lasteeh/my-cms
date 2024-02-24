@@ -34,15 +34,6 @@ class UsersController extends ApplicationController
 
   private function user_params(array $user_input): array
   {
-    $permitted_fields = ['email', 'password', 'password_confirmation'];
-    $user_params = [];
-
-    foreach ($permitted_fields as $field) {
-      if (isset($user_input[$field])) {
-        $user_params[$field] = $user_input[$field];
-      }
-    }
-
-    return $user_params;
+    return $this->permit(['email', 'password', 'password_confirmation'], $user_input);
   }
 }

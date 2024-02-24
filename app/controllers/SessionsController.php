@@ -45,15 +45,6 @@ class SessionsController extends ApplicationController
 
   private function login_params(array $user_input): array
   {
-    $permitted_fields = ['email', 'password'];
-    $login_params = [];
-
-    foreach ($permitted_fields as $field) {
-      if (isset($user_input[$field])) {
-        $login_params[$field] = $user_input[$field];
-      }
-    }
-
-    return $login_params;
+    return $this->permit(['email', 'password'], $user_input);
   }
 }

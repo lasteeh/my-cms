@@ -154,4 +154,18 @@ class ActionController extends Base
   {
     $this->OBJECTS[$name] = $object;
   }
+
+
+  protected function permit(array $permitted_fields, $user_input): array
+  {
+    $params = [];
+
+    foreach ($permitted_fields as $field) {
+      if (isset($user_input[$field])) {
+        $login_params[$field] = $user_input[$field];
+      }
+    }
+
+    return $params;
+  }
 }
