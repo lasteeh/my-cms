@@ -27,7 +27,6 @@ class ApplicationController extends ActionController
 
   protected function authenticate_request()
   {
-    echo 'authenticated';
     if (!$this->current_user()) {
       $this->redirect('/login');
     }
