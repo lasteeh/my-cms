@@ -32,16 +32,17 @@ class ApplicationController extends ActionController
     }
   }
 
-  public function current_user(): ?object
+  public function current_user()
   {
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['token'])) {
       return null;
     }
 
     if (empty(self::$CURRENT_USER)) {
-      $current_user = new User;
-      $current_user->find_user_by_id($_SESSION['user_id']);
-      self::$CURRENT_USER = $current_user;
+      $record = (new User)->find_user_by_token($_SESSION['token']);
+      if ($record) {
+        self::$CURRENT_USER = $record;
+      }
     }
 
     return self::$CURRENT_USER;

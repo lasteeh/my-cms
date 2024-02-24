@@ -8,6 +8,8 @@ use Core\Database;
 
 class ActiveRecord extends Base
 {
+  public $id;
+
   private static string $MODELS_DIRECTORY;
 
   private $TABLE;
@@ -35,62 +37,27 @@ class ActiveRecord extends Base
 
     self::$DB = Database::$PDO;
 
-    $this->create($model_object);
+    $this->new($model_object);
 
     // setup callbacks
-    $this->get_before_validate_callbacks();
-    $this->get_skip_before_validate_callbacks();
-    $this->get_before_save_callbacks();
-    $this->get_skip_before_save_callbacks();
+    $this->setup_callback('before_validate');
+    $this->setup_callback('skip_before_validate');
+    $this->setup_callback('before_save');
+    $this->setup_callback('skip_before_save');
   }
 
-  protected function get_before_validate_callbacks()
+  private function setup_callback(string $callback_name)
   {
-    $all_before_validate = array_merge(
-      self::$before_validate,
-      Application_Record::$before_validate,
-      static::$before_validate
-    );
+    $all_callbacks = array_merge(self::$$callback_name, Application_Record::$$callback_name, static::$$callback_name);
 
-    static::$before_validate = $this->normalize_callback_array($all_before_validate);
-  }
-  protected function get_skip_before_validate_callbacks()
-  {
-    $all_skip_before_validate = array_merge(
-      self::$skip_before_validate,
-      Application_Record::$skip_before_validate,
-      static::$skip_before_validate
-    );
-
-    static::$skip_before_validate = $this->normalize_callback_array($all_skip_before_validate);
-  }
-  protected function get_before_save_callbacks()
-  {
-    $all_before_save = array_merge(
-      self::$before_save,
-      Application_Record::$before_save,
-      static::$before_save
-    );
-
-    static::$before_save = $this->normalize_callback_array($all_before_save);
-  }
-  protected function get_skip_before_save_callbacks()
-  {
-    $all_skip_before_save = array_merge(
-      self::$skip_before_save,
-      Application_Record::$skip_before_save,
-      static::$skip_before_save
-    );
-
-    static::$skip_before_save = $this->normalize_callback_array($all_skip_before_save);
+    static::$$callback_name = $this->normalize_callback_array($all_callbacks);
   }
 
-  public function create(array $model_object)
+  public function new(array $model_object)
   {
     foreach ($model_object as $attribute => $value) {
       if (property_exists($this, $attribute)) {
-        $this->$attribute = $value;
-        $this->ATTRIBUTES[$attribute] = $value;
+        $this->update_attribute($attribute, $value);
       } else {
         $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
         $this->handle_errors();
@@ -98,57 +65,37 @@ class ActiveRecord extends Base
     }
   }
 
-  private function validate(): bool
+  private function validate_column_update($column): bool
+  {
+    if (!$this->ATTRIBUTES[$column]) {
+      $this->ERRORS[] = "{$this->$column} does not exist.";
+      return false;
+    }
+
+    // run only for column
+    $errors = $this->validate_field($column);
+
+
+    if (empty($errors)) {
+      return true;
+    } else {
+      $this->ERRORS = $errors;
+      return false;
+    }
+  }
+
+  private function validate_save(): bool
   {
     if (empty($this->ATTRIBUTES)) {
       $this->ERRORS[] = "{$this->MODEL} is empty";
       return false;
     }
 
-    $errors = [];
-
     // run each validator in foreach
+    $errors = [];
     foreach ($this->validations as $field => $rules) {
-      $data_type = \PDO::PARAM_STR;
-
-      foreach ($rules as $rule => $value) {
-        if ($rule === 'numericality' && isset($value['only_integer'])) {
-          if (!is_numeric($this->ATTRIBUTES[$field]) || !is_int($this->ATTRIBUTES[$field] + 0)) {
-            $data_type = \PDO::PARAM_INT;
-
-            $errors[] = "{$field} must be an integer.";
-          }
-        }
-
-        if ($rule === 'presence' && $value === true) {
-          if (empty($this->ATTRIBUTES[$field])) {
-            $errors[] = "{$field} can't be blank.";
-          }
-        }
-
-        if ($rule === 'uniqueness' && $value === true) {
-          $existing_record = $this->find_uniquness_by($field, $this->ATTRIBUTES[$field]);
-
-          if ($existing_record) {
-            $errors[] = "{$field} '{$this->ATTRIBUTES[$field]}' already exists.";
-          }
-        }
-
-        if ($rule === 'length' && isset($value['minimum'])) {
-          if (strlen($this->ATTRIBUTES[$field]) < $value['minimum']) {
-            $errors[] = "{$field} is too short (minimum length: " . $value['minimum'] . " characters).";
-          }
-        }
-
-        if ($rule === 'confirmation' && $value === true) {
-          $confirmation_field = "{$field}_confirmation";
-          if ($this->ATTRIBUTES[$field] !== $this->ATTRIBUTES[$confirmation_field]) {
-            $errors[] = "{$field} and {$confirmation_field} do not match.";
-          }
-        }
-      }
+      $errors = array_merge($errors, $this->validate_field($field));
     }
-
 
     if (empty($errors)) {
       return true;
@@ -160,12 +107,57 @@ class ActiveRecord extends Base
 
   protected function remove_attribute(string $attribute)
   {
-    unset($this->ATTRIBUTES["{$attribute}"]);
+    unset($this->$attribute);
+    unset($this->ATTRIBUTES[$attribute]);
   }
 
   protected function update_attribute(string $attribute, $value)
   {
-    $this->ATTRIBUTES["{$attribute}"] = $value;
+    $this->$attribute = $value;
+    $this->ATTRIBUTES[$attribute] = $value;
+  }
+
+  protected function update_column(string $column, $value = null): bool
+  {
+    $old_value = $this->$column;
+
+    if ($value === null) {
+      $value = $old_value;
+    }
+    $this->update_attribute($column, $value);
+
+    // run before validations
+    $this->run_before_validate();
+
+    // run validations
+    if (!$this->validate_column_update($column)) {
+      return false;
+    }
+
+    // run after validation
+
+    // run before update
+
+    // write update to DB
+    $sql = "UPDATE {$this->TABLE} SET {$column} = :value WHERE id = :id";
+
+    var_dump($this);
+
+    try {
+      $statement = self::$DB->prepare($sql);
+      $statement->bindValue(':value', $value);
+      $statement->bindParam(':id', $this->id);
+
+      $statement->execute();
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+    // run after update
+
+
+    return true;
   }
 
   public function find_by($column, $value)
@@ -197,7 +189,7 @@ class ActiveRecord extends Base
   // TODO: replace with query builder!!!
   public function find_user_by_email(string $email)
   {
-    $sql = "SELECT id, email, password FROM {$this->TABLE} WHERE email = :value";
+    $sql = "SELECT id, email, password, token FROM {$this->TABLE} WHERE email = :value";
 
     $statement = self::$DB->prepare($sql);
     $statement->bindParam(':value', $email);
@@ -207,12 +199,12 @@ class ActiveRecord extends Base
 
     return $record;
   }
-  public function find_user_by_id(string $id)
+  public function find_user_by_token(string $token)
   {
-    $sql = "SELECT id, email, password FROM {$this->TABLE} WHERE id = :value";
+    $sql = "SELECT id, email, token FROM {$this->TABLE} WHERE token = :value";
 
     $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $id);
+    $statement->bindParam(':value', $token);
     $statement->execute();
 
     $record = $statement->fetch(\PDO::FETCH_ASSOC);
@@ -223,14 +215,10 @@ class ActiveRecord extends Base
   public function save(): bool
   {
     // run before validations
-    foreach (static::$before_validate as $callback) {
-      if (!$this->callback_should_skip($callback, static::$skip_before_validate)) {
-        $this->$callback();
-      }
-    }
+    $this->run_before_validate();
 
     // run validations
-    if (!$this->validate()) {
+    if (!$this->validate_save()) {
       return false;
     }
 
@@ -267,9 +255,7 @@ class ActiveRecord extends Base
         $statement->bindValue($key, $value);
       }
 
-      $result = $statement->execute();
-
-      return $result;
+      $statement->execute();
     } catch (\PDOException $e) {
       $this->ERRORS[] = $e->getMessage();
       $this->handle_errors();
@@ -280,12 +266,21 @@ class ActiveRecord extends Base
     return true;
   }
 
-  protected function callback_should_skip(string $callback, array $skip_after_save_array): bool
+  private function run_before_validate()
+  {
+    foreach (static::$before_validate as $callback) {
+      if (!$this->callback_should_skip($callback, static::$skip_before_validate)) {
+        $this->$callback();
+      }
+    }
+  }
+
+  private function callback_should_skip(string $callback, array $skip_after_save_array): bool
   {
     return in_array($callback, $skip_after_save_array);
   }
 
-  protected function normalize_callback_array(array $callbacks)
+  private function normalize_callback_array(array $callbacks)
   {
     $normalized_callbacks = [];
 
@@ -299,5 +294,52 @@ class ActiveRecord extends Base
     }
 
     return $normalized_callbacks;
+  }
+
+  private function validate_field(string $field): array
+  {
+    $errors = [];
+
+    foreach ($this->validations[$field] as $rule => $value) {
+      switch ($rule) {
+        case 'numericality':
+          if (isset($value['only_integer'])) {
+            if (!is_numeric($this->ATTRIBUTES[$field]) || !is_int($this->ATTRIBUTES[$field] + 0)) {
+              $errors[] = "{$field} must be an integer.";
+            }
+          }
+          break;
+
+        case 'presence':
+          if ($value === true && empty($this->ATTRIBUTES[$field])) {
+            $errors[] = "{$field} can't be blank.";
+          }
+          break;
+
+        case 'uniqueness':
+          if ($value === true) {
+            $existing_record = $this->find_uniquness_by($field, $this->ATTRIBUTES[$field]);
+            if ($existing_record) {
+              $errors[] = "{$field} '{$this->ATTRIBUTES[$field]}' already exists.";
+            }
+          }
+          break;
+
+        case 'length':
+          if (isset($value['minimum']) && strlen($this->ATTRIBUTES[$field]) < $value['minimum']) {
+            $errors[] = "{$field} is too short (minimum length: {$value['minimum']} characters).";
+          }
+          break;
+
+        case 'confirmation':
+          $confirmation_field = "{$field}_confirmation";
+          if ($value === true && $this->ATTRIBUTES[$field] !== $this->ATTRIBUTES[$confirmation_field]) {
+            $errors[] = "{$field} and {$confirmation_field} do not match.";
+          }
+          break;
+      }
+    }
+
+    return $errors;
   }
 }
