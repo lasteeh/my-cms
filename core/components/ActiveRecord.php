@@ -182,6 +182,18 @@ class ActiveRecord extends Base
 
     return $record;
   }
+  public function find_user_by_id(string $id)
+  {
+    $sql = "SELECT id, email, password FROM {$this->TABLE} WHERE id = :value";
+
+    $statement = self::$DB->prepare($sql);
+    $statement->bindParam(':value', $id);
+    $statement->execute();
+
+    $record = $statement->fetch(\PDO::FETCH_ASSOC);
+
+    return $record;
+  }
 
   public function save(): bool
   {

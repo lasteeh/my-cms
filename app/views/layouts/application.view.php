@@ -8,6 +8,13 @@
 </head>
 
 <body>
+  <?php
+  if (isset($_SESSION['user_id'])) {
+  ?>
+    <p> <?php echo ($_SESSION['user_id']); ?></p>
+  <?php
+  }
+  ?>
   <?php include $view_file; ?>
 </body>
 

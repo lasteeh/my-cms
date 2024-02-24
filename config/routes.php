@@ -4,7 +4,7 @@ return [
 
   // default homepage. change the controller@action to customize homepage
   '/' => [
-    'GET' => 'application@index',
+    'GET' => 'application@home',
   ],
 
   /***
@@ -18,8 +18,19 @@ return [
     'GET' => 'sessions@new',
     'POST' => 'sessions@create',
   ],
+  '/logout' => [
+    'GET' => 'sessions@destroy',
+  ],
 
   '/users' => [
     'POST' => 'users@create',
+  ],
+
+  '/pages' => [
+    'GET' => 'pages@new',
+  ],
+
+  '/dashboard' => [
+    'GET' => 'application@dashboard',
   ],
 ];

@@ -7,9 +7,19 @@ use App\Models\User;
 
 class SessionsController extends ApplicationController
 {
+  protected static $skip_before_action = [
+    'authenticate_request',
+  ];
+
   public function new()
   {
-    $this->render();
+    $current_user = $this->current_user();
+
+    if (empty($current_user)) {
+      $this->render();
+    } else {
+      $this->redirect('/dashboard');
+    }
   }
 
   public function create()
@@ -24,6 +34,13 @@ class SessionsController extends ApplicationController
     } else {
       $this->redirect('/dashboard');
     }
+  }
+
+  public function destroy()
+  {
+    session_unset();
+    session_destroy();
+    $this->redirect('/');
   }
 
   private function login_params(array $user_input): array

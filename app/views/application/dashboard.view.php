@@ -1,0 +1,1 @@
+<a href="<?php $this->url('/logout'); ?>">logout</a>
