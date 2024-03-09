@@ -9,7 +9,7 @@ class Request extends Base
   public ?string $URI = null;
   public string $METHOD = 'GET'; // set 'GET' as fallback request method
 
-  public $PARAMETERS = [];
+  public $ROUTE_PARAMETERS = [];
   public $CONTROLLER = [
     'name' => 'application', // set 'application' fallback controller name
     'action' => 'not_found', // set 'not_found' fallback controller action
@@ -68,7 +68,7 @@ class Request extends Base
           // Extract parameter values and set Request parameters
           preg_match_all('/:([^\s\/]+)/', $route, $parameter_keys);
           foreach ($parameter_keys[1] as $index => $key) {
-            $this->PARAMETERS[$key] = $matches[$index + 1];
+            $this->ROUTE_PARAMETERS[$key] = $matches[$index + 1];
           }
           // set Request method
           $this->METHOD = $method;
