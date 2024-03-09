@@ -9,6 +9,7 @@ use App\Controllers\ApplicationController;
 class ActionController extends Base
 {
   protected array $PAGE_INFO = [];
+  protected string $PAGE_LAYOUT = 'application';
 
   protected static $skip_before_action = [];
   protected static $before_action = [];
@@ -19,53 +20,23 @@ class ActionController extends Base
 
   public function __construct()
   {
-    $this->get_before_action_filters();
-    $this->get_skip_before_action_filters();
-    $this->get_after_action_filters();
-    $this->get_skip_after_action_filters();
+
+    // setup filters
+    $this->setup_filter('before_action');
+    $this->setup_filter('skip_before_action');
+    $this->setup_filter('after_action');
+    $this->setup_filter('skip_after_action');
   }
 
-  protected function get_before_action_filters()
+  private function setup_filter(string $filter_name)
   {
-    $all_before_action = array_merge(
-      self::$before_action,
-      ApplicationController::$before_action,
-      static::$before_action
+    $all_filters = array_merge(
+      self::$$filter_name,
+      ApplicationController::$$filter_name,
+      static::$$filter_name
     );
 
-    static::$before_action = $this->normalize_filter_array($all_before_action);
-  }
-
-  protected function get_skip_before_action_filters()
-  {
-    $all_skip_before_action = array_merge(
-      self::$skip_before_action,
-      ApplicationController::$skip_before_action,
-      static::$skip_before_action
-    );
-
-    static::$skip_before_action = $this->normalize_filter_array($all_skip_before_action);
-  }
-  protected function get_after_action_filters()
-  {
-    $all_after_action = array_merge(
-      self::$after_action,
-      ApplicationController::$after_action,
-      static::$after_action
-    );
-
-    static::$after_action = $this->normalize_filter_array($all_after_action);
-  }
-
-  protected function get_skip_after_action_filters()
-  {
-    $all_skip_after_action = array_merge(
-      self::$skip_after_action,
-      ApplicationController::$skip_after_action,
-      static::$skip_after_action
-    );
-
-    static::$skip_after_action = $this->normalize_filter_array($all_skip_after_action);
+    static::$$filter_name = $this->normalize_filter_array($all_filters);
   }
 
   protected function filter_should_apply(string $action, array $options = [])
@@ -92,14 +63,6 @@ class ActionController extends Base
     return false;
   }
 
-  public function not_found()
-  {
-    $this->PAGE_INFO = [
-      'page_title' => 'Page Not Found',
-    ];
-    $this->render();
-  }
-
   public function render(string $action = '')
   {
     // Use debug_backtrace() to get the calling function's name
@@ -112,7 +75,7 @@ class ActionController extends Base
     $controller = get_class($this);
 
     $page = new ActionView($controller, $action);
-    $page->prepare($this->PAGE_INFO, $this->ERRORS, $this->OBJECTS);
+    $page->prepare($this->PAGE_INFO, $this->PAGE_LAYOUT, $this->ERRORS, $this->OBJECTS);
     $page->view();
   }
 
@@ -167,5 +130,10 @@ class ActionController extends Base
     }
 
     return $params;
+  }
+
+  protected function set_layout(string $layout)
+  {
+    $this->PAGE_LAYOUT = $layout;
   }
 }

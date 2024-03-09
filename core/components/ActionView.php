@@ -14,6 +14,7 @@ class ActionView extends Base
 
   protected string $controller_views_directory;
   protected string $controller_action;
+  protected string $page_layout = '';
 
   public string $page_title = '';
 
@@ -52,7 +53,7 @@ class ActionView extends Base
     return $this->VIEWS_DIR() . $this->controller_views_directory . $action . self::VIEW_FILE_EXT;
   }
 
-  protected function get_layout_file(string $layout = 'application', string $directory = self::LAYOUTS_DIR)
+  protected function get_layout_file(string $layout, string $directory = self::LAYOUTS_DIR)
   {
     $layout_directory = $directory ?? self::LAYOUTS_DIR;
 
@@ -68,9 +69,11 @@ class ActionView extends Base
   }
 
 
-  public function prepare(array $page_info = [], array $page_errors = [], array $objects = [])
+  public function prepare(array $page_info = [], string $page_layout, array $page_errors = [], array $objects = [])
   {
     $this->page_title = isset($page_info['page_title']) && is_string($page_info['page_title']) ? $page_info['page_title'] : '';
+
+    $this->page_layout = $page_layout;
 
     $this->ERRORS = $page_errors;
 
@@ -86,7 +89,7 @@ class ActionView extends Base
   public function view()
   {
     $view_file = $this->get_view_file($this->controller_action);
-    $layout_file = $this->get_layout_file();
+    $layout_file = $this->get_layout_file($this->page_layout);
 
     if (file_exists($view_file)) {
       include $layout_file;
@@ -102,5 +105,15 @@ class ActionView extends Base
   public function url(string $path)
   {
     echo static::$ROOT_URL . $path;
+  }
+
+  public function stylesheet(string $file_name)
+  {
+    echo static::$ROOT_URL . "/public/assets/css/" . $file_name . ".css";
+  }
+
+  public function script(string $file_name)
+  {
+    echo static::$ROOT_URL . "/public/assets/js/" . $file_name . ".js";
   }
 }
