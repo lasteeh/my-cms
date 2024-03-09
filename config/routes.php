@@ -26,11 +26,18 @@ return [
     'POST' => 'users@create',
   ],
 
-  '/pages' => [
-    'GET' => 'pages@new',
-  ],
-
   '/dashboard' => [
     'GET' => 'application@dashboard',
+  ],
+
+  '/dashboard/pages' => [
+    'GET' => 'pages@index',
+    'POST' => 'pages@create',
+  ],
+  '/dashboard/pages/new' => [
+    'GET' => 'pages@new',
+  ],
+  '/dashboard/pages/:id/edit' => [
+    'GET' => 'pages@edit',
   ],
 ];
