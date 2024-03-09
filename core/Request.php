@@ -9,7 +9,7 @@ class Request extends Base
   public ?string $URI = null;
   public string $METHOD = 'GET'; // set 'GET' as fallback request method
 
-  public $PARAMETER = null;
+  public $PARAMETERS = [];
   public $CONTROLLER = [
     'name' => 'application', // set 'application' fallback controller name
     'action' => 'not_found', // set 'not_found' fallback controller action
@@ -65,8 +65,11 @@ class Request extends Base
         // check if the current request URI matches the route pattern
         // and if the HTTP method matches the specified method.
         if (preg_match($route_pattern, $this->URI, $matches) && $_SERVER['REQUEST_METHOD'] === $method) {
-          // set Request parameter
-          $this->PARAMETER = $matches[1] ?? null;
+          // Extract parameter values and set Request parameters
+          preg_match_all('/:([^\s\/]+)/', $route, $parameter_keys);
+          foreach ($parameter_keys[1] as $index => $key) {
+            $this->PARAMETERS[$key] = $matches[$index + 1];
+          }
           // set Request method
           $this->METHOD = $method;
           // split the controller and action from the route information.
