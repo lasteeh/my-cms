@@ -8,6 +8,7 @@ use App\Controllers\ApplicationController;
 
 class ActionController extends Base
 {
+  protected array $ROUTE_PARAMS = [];
   protected array $PAGE_INFO = [];
   protected string $PAGE_LAYOUT = 'application';
 
@@ -61,6 +62,15 @@ class ActionController extends Base
     }
 
     return false;
+  }
+
+  public function set_route_params(array $parameters)
+  {
+    $this->ROUTE_PARAMS = $parameters;
+  }
+  public function get_route_param(string $parameter)
+  {
+    return $this->ROUTE_PARAMS[$parameter] ?? null;
   }
 
   public function render(string $action = '')
