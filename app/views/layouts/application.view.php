@@ -18,10 +18,10 @@
   </main>
   <aside>
     <nav>
-      <ul>
+      <menu>
         <li><a href="<?php $this->url('/dashboard') ?>">Dashboard</a></li>
-        <li><a href="<?php $this->url('/dashboard') ?>">Logout</a></li>
-      </ul>
+        <li><a href="<?php $this->url('/logout') ?>">Logout</a></li>
+      </menu>
     </nav>
   </aside>
   <footer></footer>

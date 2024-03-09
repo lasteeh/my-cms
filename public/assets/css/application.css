@@ -22,9 +22,11 @@
       "main"
       "footer";
     grid-template-rows: auto auto 1fr auto;
+
+    isolation: isolate;
   }
 
-  @media screen and (width > 600px) {
+  @media screen and (width > 640px) {
     .application {
       grid-template-areas:
         "header header"
@@ -37,15 +39,45 @@
 
   .application > header {
     grid-area: header;
+    z-index: 3;
   }
   .application > main {
     grid-area: main;
+    z-index: 1;
     overflow-y: auto;
   }
   .application > aside {
     grid-area: aside;
+    z-index: 2;
   }
   .application > footer {
     grid-area: footer;
+    z-index: 4;
+  }
+}
+
+@layer general {
+  header {
+    color: #fff;
+    background-color: gray;
+    box-shadow: 0.125rem 0.125rem 0.25rem hsl(0, 0%, 0%, 0.2);
+
+    padding: 0.5em 1em;
+  }
+
+  aside {
+    background-color: lightgray;
+
+    padding-inline: 1em;
+    padding-block: 1em;
+  }
+
+  main {
+    padding-inline: 2em;
+    padding-block: 1em;
+  }
+
+  aside menu {
+    list-style: none;
   }
 }
