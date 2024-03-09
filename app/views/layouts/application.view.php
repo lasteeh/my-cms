@@ -5,10 +5,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo $this->page_title; ?></title>
+  <link id="app-style" rel="stylesheet" href="<?php $this->stylesheet('application') ?>">
+  <script id="app-script" src="<?php $this->script('application') ?>" defer></script>
 </head>
 
-<body>
-  <?php include $view_file; ?>
+<body class="application">
+  <header>
+    <h1>CMS App</h1>
+  </header>
+  <main>
+    <?php include $view_file; ?>
+  </main>
+  <aside>
+    <nav>
+      <ul>
+        <li><a href="<?php $this->url('/dashboard') ?>">Dashboard</a></li>
+        <li><a href="<?php $this->url('/dashboard') ?>">Logout</a></li>
+      </ul>
+    </nav>
+  </aside>
+  <footer></footer>
 </body>
 
 </html>

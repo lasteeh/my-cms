@@ -11,12 +11,23 @@ class ApplicationController extends ActionController
 
   protected static $before_action = [
     'authenticate_request'  => [
-      'except' => ['home'],
+      'except' => ['home', 'not_found'],
     ],
   ];
 
   public function home()
   {
+    $this->set_layout('page');
+    $this->render();
+  }
+
+
+  public function not_found()
+  {
+    $this->PAGE_INFO = [
+      'page_title' => 'Page Not Found',
+    ];
+    $this->set_layout('page');
     $this->render();
   }
 

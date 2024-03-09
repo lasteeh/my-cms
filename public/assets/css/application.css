@@ -1,0 +1,51 @@
+@layer reset, base, layout, components, utilities, general;
+
+@layer reset {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+}
+
+@layer layout {
+  body {
+    position: relative;
+    height: 100vh;
+  }
+
+  .application {
+    display: grid;
+    grid-template-areas:
+      "header"
+      "aside"
+      "main"
+      "footer";
+    grid-template-rows: auto auto 1fr auto;
+  }
+
+  @media screen and (width > 600px) {
+    .application {
+      grid-template-areas:
+        "header header"
+        "aside main"
+        "footer footer";
+      grid-template-columns: minmax(150px, max-content) 1fr;
+      grid-template-rows: auto 1fr auto;
+    }
+  }
+
+  .application > header {
+    grid-area: header;
+  }
+  .application > main {
+    grid-area: main;
+    overflow-y: auto;
+  }
+  .application > aside {
+    grid-area: aside;
+  }
+  .application > footer {
+    grid-area: footer;
+  }
+}
