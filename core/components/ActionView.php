@@ -106,6 +106,10 @@ class ActionView extends Base
   {
     echo static::$ROOT_URL . $path;
   }
+  public function get_url(string $path)
+  {
+    return static::$ROOT_URL . $path;
+  }
 
   public function stylesheet(string $file_name)
   {
