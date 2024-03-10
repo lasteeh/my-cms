@@ -19,6 +19,8 @@ class ActiveRecord extends Base
 
   protected static $skip_before_validate = [];
   protected static $before_validate = [];
+  protected static $skip_after_validate = [];
+  protected static $after_validate = [];
 
   protected $validations = [];
 
@@ -26,6 +28,11 @@ class ActiveRecord extends Base
   protected static $before_save = [];
   protected static $skip_after_save = [];
   protected static $after_save = [];
+
+  protected static $skip_before_update = [];
+  protected static $before_update = [];
+  protected static $skip_after_update = [];
+  protected static $after_update = [];
 
   public function __construct(array $model_object = [])
   {
@@ -40,10 +47,20 @@ class ActiveRecord extends Base
     $this->new($model_object);
 
     // setup callbacks
-    $this->setup_callback('before_validate');
     $this->setup_callback('skip_before_validate');
-    $this->setup_callback('before_save');
+    $this->setup_callback('before_validate');
+    $this->setup_callback('skip_after_validate');
+    $this->setup_callback('after_validate');
+
     $this->setup_callback('skip_before_save');
+    $this->setup_callback('before_save');
+    $this->setup_callback('skip_after_save');
+    $this->setup_callback('after_save');
+
+    $this->setup_callback('skip_before_update');
+    $this->setup_callback('before_update');
+    $this->setup_callback('skip_before_save');
+    $this->setup_callback('before_save');
   }
 
   private function setup_callback(string $callback_name)
@@ -115,6 +132,13 @@ class ActiveRecord extends Base
   {
     $this->$attribute = $value;
     $this->ATTRIBUTES[$attribute] = $value;
+  }
+  protected function update_attributes(array $attributes)
+  {
+    foreach ($attributes as $attribute => $value) {
+      $this->$attribute = $value;
+      $this->ATTRIBUTES[$attribute] = $value;
+    }
   }
 
   protected function update_column(string $column, $value = null): bool
@@ -210,6 +234,46 @@ class ActiveRecord extends Base
     $record = $statement->fetch(\PDO::FETCH_ASSOC);
 
     return $record;
+  }
+
+  public function validate_update(): bool
+  {
+    if (empty($this->ATTRIBUTES)) {
+      $this->ERRORS[] = "{$this->MODEL} is empty";
+      return false;
+    }
+
+    // run each validator in foreach
+    $errors = [];
+    foreach ($this->validations as $field => $rules) {
+      $errors = array_merge($errors, $this->validate_field($field));
+    }
+
+    if (empty($errors)) {
+      return true;
+    } else {
+      $this->ERRORS = $errors;
+      return false;
+    }
+  }
+
+  public function update(): bool
+  {
+    $this->run_before_validate();
+
+    if (!$this->validate_update()) {
+      return false;
+    }
+
+    foreach (static::$before_update as $callback) {
+      if (!$this->callback_should_skip($callback, static::$skip_before_update)) {
+        $this->$callback();
+      }
+    }
+
+    // update DB
+    echo "updating";
+    return false;
   }
 
   public function save(): bool
@@ -341,5 +405,15 @@ class ActiveRecord extends Base
     }
 
     return $errors;
+  }
+
+  public function all(): array
+  {
+    $sql = "SELECT * FROM {$this->TABLE}";
+
+    $statement = self::$DB->query($sql);
+    $records = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+    return $records;
   }
 }

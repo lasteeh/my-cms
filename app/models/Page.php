@@ -35,6 +35,14 @@ class Page extends Application_Record
     return [$this, $this->ERRORS];
   }
 
+  public function publish_updates(array $page_params): array
+  {
+    $this->update_attributes($page_params);
+    $this->update();
+
+    return [$this, $this->ERRORS];
+  }
+
   protected function normalize_slug()
   {
     $slug = $this->slug;

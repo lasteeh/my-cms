@@ -34,6 +34,9 @@ return [
     'GET' => 'pages@index',
     'POST' => 'pages@create',
   ],
+  '/dashboard/pages/:id' => [
+    'POST' => 'pages@update',
+  ],
   '/dashboard/pages/new' => [
     'GET' => 'pages@new',
   ],
