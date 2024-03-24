@@ -2,11 +2,11 @@
 
 namespace Core;
 
-use Core\Traits\ErrorHandler;
+use Core\Traits\ErrorHandling;
 
 class Base
 {
-  use ErrorHandler;
+  use ErrorHandling;
 
   /** DO NOT EDIT *************************************************************************************/
   // directory names

@@ -4,7 +4,7 @@ namespace Core\Traits;
 
 use Throwable;
 
-trait ErrorHandler
+trait ErrorHandling
 {
   public array $ERRORS = [];
   protected static $ENVIRONMENT = 'CLI';
