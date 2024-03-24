@@ -27,9 +27,8 @@ class SessionsController extends ApplicationController
 
   public function create()
   {
-    $login_params = $this->login_params($_POST);
     $user = new User;
-    list($user, $error_messages) = $user->login($login_params);
+    list($user, $error_messages) = $user->login($this->login_params());
 
     if ($error_messages) {
       $this->ERRORS = $error_messages;
@@ -51,8 +50,8 @@ class SessionsController extends ApplicationController
     $this->set_layout('page');
   }
 
-  private function login_params(array $user_input): array
+  private function login_params(): array
   {
-    return $this->params_permit(['email', 'password'], $user_input);
+    return $this->params_permit(['email', 'password'], $_POST);
   }
 }

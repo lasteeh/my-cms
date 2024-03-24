@@ -6,12 +6,13 @@ use App\Models\Application_Record;
 
 class Page extends Application_Record
 {
-  public $id;
   public string $slug;
   public string $title;
   public string $sub_title;
   public string $description;
   public string $content;
+  public string $created_at;
+  public string $updated_at;
 
   protected static $before_validate = [
     'normalize_slug',
@@ -36,10 +37,10 @@ class Page extends Application_Record
     return [$this, $this->ERRORS];
   }
 
-  public function publish_updates(array $page_params): array
+  public function revise(array $page_params): array
   {
     $this->update_attributes($page_params);
-    $this->update();
+    $this->save();
 
     return [$this, $this->ERRORS];
   }

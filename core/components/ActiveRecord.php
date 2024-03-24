@@ -44,7 +44,7 @@ class ActiveRecord extends Base
 
     self::$DB = Database::$PDO;
 
-    $this->new($model_object);
+    $this->map_attributes($model_object);
 
     // setup callbacks
     $this->setup_callback('skip_before_validate');
@@ -91,6 +91,7 @@ class ActiveRecord extends Base
   public function new(array $object_params): object
   {
     $this->reset();
+    new self();
     $this->map_attributes($object_params);
 
     return $this;
@@ -116,6 +117,7 @@ class ActiveRecord extends Base
     unset($this->ATTRIBUTES[$attribute]);
   }
 
+  // TODO: check against old value for update, if same, dont include in validation
   // create new db entry or update existing one
   public function save(): bool
   {
@@ -140,6 +142,7 @@ class ActiveRecord extends Base
       $statement->execute([$this->id]);
       $exists = $statement->fetchColumn() > 0;
     }
+
     // actual save function
     $sql = "";
     $param_values = [];
@@ -304,6 +307,13 @@ class ActiveRecord extends Base
     $this->set_attribute($attribute, $value);
   }
 
+  public function update_attributes(array $attributes)
+  {
+    foreach ($attributes as $attribute => $value) {
+      $this->set_attribute($attribute, $value);
+    }
+  }
+
   public function remove_attribute(string $attribute)
   {
     $this->unset_attribute($attribute);
@@ -360,6 +370,16 @@ class ActiveRecord extends Base
 
   // QUERIES
 
+  public function all(): array
+  {
+    $sql = "SELECT * FROM {$this->TABLE}";
+
+    $statement = self::$DB->query($sql);
+    $records = $statement->fetchAll(\PDO::FETCH_ASSOC);
+
+    return $records;
+  }
+
   public function find_by(array $conditions): ?object
   {
     try {
@@ -386,7 +406,7 @@ class ActiveRecord extends Base
       if (!$result) {
         return null;
       } else {
-        $this->map_attributes($result);
+        $this->new($result);
         return $this;
       }
     } catch (\PDOException $e) {
