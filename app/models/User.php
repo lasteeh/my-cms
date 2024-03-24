@@ -7,6 +7,7 @@ use DateTimeImmutable;
 
 class User extends Application_Record
 {
+  public $id;
   public string $email;
   public string $password;
   public ?string $token;
@@ -37,6 +38,7 @@ class User extends Application_Record
     ],
   ];
 
+  // funtion to register a new user
   public function register(array $user_params): array
   {
     $this->new($user_params);

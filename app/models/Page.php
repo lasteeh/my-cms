@@ -6,6 +6,7 @@ use App\Models\Application_Record;
 
 class Page extends Application_Record
 {
+  public $id;
   public string $slug;
   public string $title;
   public string $sub_title;
