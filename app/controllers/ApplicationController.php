@@ -43,7 +43,7 @@ class ApplicationController extends ActionController
     }
   }
 
-  public function current_user()
+  public function current_user(): ?array
   {
     if (!isset($_SESSION['token'])) {
       return null;
@@ -52,7 +52,10 @@ class ApplicationController extends ActionController
     if (empty(self::$CURRENT_USER)) {
       $record = (new User)->find_user_by_token($_SESSION['token']);
       if ($record) {
-        self::$CURRENT_USER = $record;
+        self::$CURRENT_USER = [
+          'id' => $record->id,
+          'email' => $record->email,
+        ];
       }
     }
 

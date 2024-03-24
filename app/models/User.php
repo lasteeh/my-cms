@@ -7,11 +7,12 @@ use DateTimeImmutable;
 
 class User extends Application_Record
 {
-  public $id;
   public string $email;
   public string $password;
   public ?string $token;
-  public string $password_confirmation;
+  public ?string $password_confirmation;
+  public string $created_at;
+  public string $updated_at;
 
   protected static $before_validate = [
     'normalize_email',
@@ -73,13 +74,11 @@ class User extends Application_Record
       return [null, $this->ERRORS];
     }
 
-    // initialize attributes
-    $this->new($record);
-
     if (!password_verify($login_params['password'], $this->password)) {
       $this->ERRORS[] = 'invalid password';
       return [null, $this->ERRORS];
     }
+
 
     // generate token
     $token = $this->generate_token();
@@ -100,5 +99,15 @@ class User extends Application_Record
     $token = hash('sha256', $identifier);
 
     return $token;
+  }
+
+  private function find_user_by_email(string $email): ?User
+  {
+    return $this->find_by(['email' => $email]);
+  }
+
+  public function find_user_by_token(string $token): ?User
+  {
+    return $this->find_by(['token' => $token]);
   }
 }

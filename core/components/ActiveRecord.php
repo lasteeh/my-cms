@@ -8,9 +8,9 @@ use Core\Database;
 
 class ActiveRecord extends Base
 {
-  public $id;
-
   private static string $MODELS_DIRECTORY;
+
+  public $id;
 
   private $TABLE;
   private $MODEL;
@@ -70,280 +70,6 @@ class ActiveRecord extends Base
     static::$$callback_name = $this->normalize_callback_array($all_callbacks);
   }
 
-  public function new(array $model_object)
-  {
-    foreach ($model_object as $attribute => $value) {
-      if (property_exists($this, $attribute)) {
-        $this->update_attribute($attribute, $value);
-      } else {
-        $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
-        $this->handle_errors();
-      }
-    }
-  }
-
-  private function validate_column_update($column): bool
-  {
-    if (!$this->ATTRIBUTES[$column]) {
-      $this->ERRORS[] = "{$this->$column} does not exist.";
-      return false;
-    }
-
-    // run only for column
-    $errors = $this->validate_field($column);
-
-
-    if (empty($errors)) {
-      return true;
-    } else {
-      $this->ERRORS = $errors;
-      return false;
-    }
-  }
-
-  private function validate_save(): bool
-  {
-    if (empty($this->ATTRIBUTES)) {
-      $this->ERRORS[] = "{$this->MODEL} is empty";
-      return false;
-    }
-
-    // run each validator in foreach
-    $errors = [];
-    foreach ($this->validations as $field => $rules) {
-      $errors = array_merge($errors, $this->validate_field($field));
-    }
-
-    if (empty($errors)) {
-      return true;
-    } else {
-      $this->ERRORS = $errors;
-      return false;
-    }
-  }
-
-  protected function remove_attribute(string $attribute)
-  {
-    unset($this->$attribute);
-    unset($this->ATTRIBUTES[$attribute]);
-  }
-
-  protected function update_attribute(string $attribute, $value)
-  {
-    $this->$attribute = $value;
-    $this->ATTRIBUTES[$attribute] = $value;
-  }
-  protected function update_attributes(array $attributes)
-  {
-    foreach ($attributes as $attribute => $value) {
-      $this->$attribute = $value;
-      $this->ATTRIBUTES[$attribute] = $value;
-    }
-  }
-
-  protected function update_column(string $column, $value = null): bool
-  {
-    $old_value = $this->$column;
-
-    if ($value === null) {
-      $value = $old_value;
-    }
-    $this->update_attribute($column, $value);
-
-    // run before validations
-    $this->run_before_validate();
-
-    // run validations
-    if (!$this->validate_column_update($column)) {
-      return false;
-    }
-
-    // run after validation
-
-    // run before update
-
-    // write update to DB
-    $sql = "UPDATE {$this->TABLE} SET {$column} = :value WHERE id = :id";
-
-    var_dump($this);
-
-    try {
-      $statement = self::$DB->prepare($sql);
-      $statement->bindValue(':value', $value);
-      $statement->bindParam(':id', $this->id);
-
-      $statement->execute();
-    } catch (\PDOException $e) {
-      $this->ERRORS[] = $e->getMessage();
-      $this->handle_errors();
-    }
-
-    // run after update
-
-
-    return true;
-  }
-
-  public function find_by($column, $value)
-  {
-    $sql = "SELECT * FROM {$this->TABLE} WHERE {$column} = :value";
-
-    $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $value);
-    $statement->execute();
-
-    $record = $statement->fetch(\PDO::FETCH_ASSOC);
-
-    return $record;
-  }
-
-  public function find_uniquness_by($column, $value)
-  {
-    $sql = "SELECT id FROM {$this->TABLE} WHERE {$column} = :value";
-
-    $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $value);
-    $statement->execute();
-
-    $record = $statement->fetch(\PDO::FETCH_ASSOC);
-
-    return $record;
-  }
-
-  // TODO: replace with query builder!!!
-  public function find_user_by_email(string $email)
-  {
-    $sql = "SELECT id, email, password, token FROM {$this->TABLE} WHERE email = :value";
-
-    $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $email);
-    $statement->execute();
-
-    $record = $statement->fetch(\PDO::FETCH_ASSOC);
-
-    return $record;
-  }
-  public function find_user_by_token(string $token)
-  {
-    $sql = "SELECT id, email, token FROM {$this->TABLE} WHERE token = :value";
-
-    $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $token);
-    $statement->execute();
-
-    $record = $statement->fetch(\PDO::FETCH_ASSOC);
-
-    return $record;
-  }
-
-  public function validate_update(): bool
-  {
-    if (empty($this->ATTRIBUTES)) {
-      $this->ERRORS[] = "{$this->MODEL} is empty";
-      return false;
-    }
-
-    // run each validator in foreach
-    $errors = [];
-    foreach ($this->validations as $field => $rules) {
-      $errors = array_merge($errors, $this->validate_field($field));
-    }
-
-    if (empty($errors)) {
-      return true;
-    } else {
-      $this->ERRORS = $errors;
-      return false;
-    }
-  }
-
-  public function update(): bool
-  {
-    $this->run_before_validate();
-
-    if (!$this->validate_update()) {
-      return false;
-    }
-
-    foreach (static::$before_update as $callback) {
-      if (!$this->callback_should_skip($callback, static::$skip_before_update)) {
-        $this->$callback();
-      }
-    }
-
-    // update DB
-    echo "updating";
-    return false;
-  }
-
-  public function save(): bool
-  {
-    // run before validations
-    $this->run_before_validate();
-
-    // run validations
-    if (!$this->validate_save()) {
-      return false;
-    }
-
-    // run after validations
-
-    // run before save
-    foreach (static::$before_save as $callback) {
-      if (!$this->callback_should_skip($callback, static::$skip_before_save)) {
-        $this->$callback();
-      }
-    }
-
-    // write to DB
-    $sql = "INSERT INTO {$this->TABLE} (";
-    $values = "VALUES (";
-
-    $param_values = [];
-
-    foreach ($this->ATTRIBUTES as $key => $value) {
-      $sql .= "{$key}, ";
-      $values .= ":{$key}, ";
-      $param_values[":{$key}"] = $value;
-    }
-
-    $sql = rtrim($sql, ", ") . ") ";
-    $values = rtrim($values, ", ") . ")";
-
-    $sql .= $values;
-
-    try {
-      $statement = self::$DB->prepare($sql);
-
-      foreach ($param_values as $key => $value) {
-        $statement->bindValue($key, $value);
-      }
-
-      $statement->execute();
-    } catch (\PDOException $e) {
-      $this->ERRORS[] = $e->getMessage();
-      $this->handle_errors();
-    }
-
-    // run after save
-
-    return true;
-  }
-
-  private function run_before_validate()
-  {
-    foreach (static::$before_validate as $callback) {
-      if (!$this->callback_should_skip($callback, static::$skip_before_validate)) {
-        $this->$callback();
-      }
-    }
-  }
-
-  private function callback_should_skip(string $callback, array $skip_after_save_array): bool
-  {
-    return in_array($callback, $skip_after_save_array);
-  }
-
   private function normalize_callback_array(array $callbacks)
   {
     $normalized_callbacks = [];
@@ -358,6 +84,159 @@ class ActiveRecord extends Base
     }
 
     return $normalized_callbacks;
+  }
+
+
+  // set array key value pairs to object variables for a new record
+  public function new(array $object_params): object
+  {
+    $this->reset();
+    $this->map_attributes($object_params);
+
+    return $this;
+  }
+
+  private function reset()
+  {
+    // Reset attributes and errors
+    unset($this->id);
+    $this->ATTRIBUTES = [];
+    $this->ERRORS = [];
+  }
+
+  private function set_attribute(string $attribute, $value)
+  {
+    $this->$attribute = $value;
+    $this->ATTRIBUTES[$attribute] = $value;
+  }
+
+  private function unset_attribute(string $attribute)
+  {
+    unset($this->$attribute);
+    unset($this->ATTRIBUTES[$attribute]);
+  }
+
+  // create new db entry or update existing one
+  public function save(): bool
+  {
+    // run before validations
+    $this->run_callback('before_validate');
+
+    // run validations
+    if (!$this->validate()) {
+      return false;
+    }
+
+    // run after validations
+
+    // run before save
+    $this->run_callback('before_save');
+
+    // check if record exists
+    $exists = false;
+    if (isset($this->id) && isset($this->ATTRIBUTES['id'])) {
+      $sql = "SELECT 1 FROM users WHERE id = ?";
+      $statement = self::$DB->prepare($sql);
+      $statement->execute([$this->id]);
+      $exists = $statement->fetchColumn() > 0;
+    }
+    // actual save function
+    $sql = "";
+    $param_values = [];
+    if ($exists) {
+      // update existing record here
+      $sql = "UPDATE {$this->TABLE} SET ";
+      $set = "";
+
+      foreach ($this->ATTRIBUTES as $key => $value) {
+        $set .= "{$key} = :{$key}, ";
+        $param_values[":{$key}"] = $value;
+      }
+
+      $set = rtrim($set, ", ");
+
+      $sql .= $set . " WHERE id = :id";
+    } else {
+      // insert new record here
+      $sql = "INSERT INTO {$this->TABLE} (";
+      $values = "VALUES (";
+
+      foreach ($this->ATTRIBUTES as $key => $value) {
+        $sql .= "{$key}, ";
+        $values .= ":{$key}, ";
+        $param_values[":{$key}"] = $value;
+      }
+
+      $sql = rtrim($sql, ", ") . ") ";
+      $values = rtrim($values, ", ") . ")";
+
+      $sql .= $values;
+    }
+
+    try {
+      $statement = self::$DB->prepare($sql);
+
+      foreach ($param_values as $key => $value) {
+        $statement->bindValue($key, $value);
+      }
+
+      if ($exists) {
+        $statement->bindValue(":id", $this->id);
+      }
+
+      $statement->execute();
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+
+    // run after save
+
+    return true;
+  }
+
+  private function run_callback($callback_name)
+  {
+    $skip_callback_name = "skip_{$callback_name}";
+
+    foreach (static::$$callback_name as $callback) {
+      if (!$this->callback_should_skip($callback, static::$$skip_callback_name)) {
+        $this->$callback();
+      }
+    }
+  }
+
+  private function callback_should_skip(string $callback, array $skip_after_save_array): bool
+  {
+    return in_array($callback, $skip_after_save_array);
+  }
+
+  private function validate(array $columns = []): bool
+  {
+    if (empty($this->ATTRIBUTES)) {
+      $this->ERRORS[] = "{$this->MODEL} is empty";
+      return false;
+    }
+
+    if (empty($columns)) {
+      $columns = array_keys($this->validations);
+    }
+
+    // run each validators in foreach
+    $errors = [];
+    foreach ($columns as $column) {
+      if (isset($this->validations[$column])) {
+        $errors = array_merge($errors, $this->validate_field($column));
+      }
+    }
+
+    if (empty($errors)) {
+      return true;
+    } else {
+      $this->ERRORS = $errors;
+      return false;
+    }
   }
 
   private function validate_field(string $field): array
@@ -382,7 +261,7 @@ class ActiveRecord extends Base
 
         case 'uniqueness':
           if ($value === true) {
-            $existing_record = $this->find_uniquness_by($field, $this->ATTRIBUTES[$field]);
+            $existing_record = $this->validate_uniqueness_by($field, $this->ATTRIBUTES[$field]);
             if ($existing_record) {
               $errors[] = "{$field} '{$this->ATTRIBUTES[$field]}' already exists.";
             }
@@ -407,13 +286,112 @@ class ActiveRecord extends Base
     return $errors;
   }
 
-  public function all(): array
+  public function validate_uniqueness_by($column, $value)
   {
-    $sql = "SELECT * FROM {$this->TABLE}";
+    $sql = "SELECT id FROM {$this->TABLE} WHERE {$column} = :value";
 
-    $statement = self::$DB->query($sql);
-    $records = $statement->fetchAll(\PDO::FETCH_ASSOC);
+    $statement = self::$DB->prepare($sql);
+    $statement->bindParam(':value', $value);
+    $statement->execute();
 
-    return $records;
+    $record = $statement->fetch(\PDO::FETCH_ASSOC);
+
+    return $record;
+  }
+
+  public function update_attribute(string $attribute, $value)
+  {
+    $this->set_attribute($attribute, $value);
+  }
+
+  public function remove_attribute(string $attribute)
+  {
+    $this->unset_attribute($attribute);
+  }
+
+  public function update_column(string $column, $value): bool
+  {
+    $this->update_attribute($column, $value);
+
+    // run before validations
+    $this->run_callback('before_validate');
+
+    // run validations
+    if (!$this->validate([$column])) {
+      return false;
+    }
+
+    // run after validations
+
+    // run before update
+    $this->run_callback('before_update');
+
+    // actual update function
+    $sql = "UPDATE {$this->TABLE} SET {$column} = :value WHERE id = :id";
+
+    try {
+      $statement = self::$DB->prepare($sql);
+      $statement->bindParam(":value", $value);
+      $statement->bindParam(":id", $this->id);
+
+      $statement->execute();
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+    // run after update
+
+    return true;
+  }
+
+  private function map_attributes(array $attributes)
+  {
+    foreach ($attributes as $attribute => $value) {
+      if (property_exists($this, $attribute)) {
+        $this->set_attribute($attribute, $value);
+      } else {
+        $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
+        $this->handle_errors();
+      }
+    }
+  }
+
+
+  // QUERIES
+
+  public function find_by(array $conditions): ?object
+  {
+    try {
+      $sql = "SELECT * FROM {$this->TABLE} WHERE ";
+      $placeholders = [];
+
+      foreach ($conditions as $column => $value) {
+        $placeholder = ":{$column}";
+
+        $sql .= "{$column} = {$placeholder} AND ";
+        $placeholders[$placeholder] = $value;
+      }
+
+      $sql = rtrim($sql, " AND ");
+
+      $statement = self::$DB->prepare($sql);
+      foreach ($placeholders as $placeholder => $value) {
+        $statement->bindValue($placeholder, $value);
+      }
+      $statement->execute();
+
+      $result = $statement->fetch(\PDO::FETCH_ASSOC);
+
+      if (!$result) {
+        return null;
+      } else {
+        $this->map_attributes($result);
+        return $this;
+      }
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
   }
 }
