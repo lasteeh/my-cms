@@ -43,4 +43,8 @@ return [
   '/dashboard/pages/:id/edit' => [
     'GET' => 'pages@edit',
   ],
+
+  '/:parent/:child/:slug/' => [
+    'GET' => 'pages@show',
+  ]
 ];
