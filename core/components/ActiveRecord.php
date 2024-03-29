@@ -17,6 +17,7 @@ class ActiveRecord extends Base
   private static $DB;
   private $ATTRIBUTES = [];
   private $OLD_ATTRIBUTES = [];
+  private bool $EXISTING_RECORD = false;
 
   protected static $skip_before_validate = [];
   protected static $before_validate = [];
@@ -102,18 +103,45 @@ class ActiveRecord extends Base
   {
     $this->reset();
     new self();
-    $this->map_attributes($object_params, 1);
+    $this->set_as_existing_record();
+    $this->map_attributes($object_params);
 
     return $this;
+  }
+
+  private function set_as_existing_record()
+  {
+    $this->EXISTING_RECORD = true;
   }
 
   private function reset()
   {
     // reset attributes and errors
     unset($this->id);
+    $this->EXISTING_RECORD = false;
     $this->ATTRIBUTES = [];
     $this->OLD_ATTRIBUTES = [];
     $this->ERRORS = [];
+  }
+
+  private function map_attributes(array $attributes)
+  {
+    foreach ($attributes as $attribute => $value) {
+      if (property_exists($this, $attribute)) {
+        $this->set_attribute($attribute, $value);
+        if ($this->is_an_existing_record()) {
+          $this->store_attribute($attribute, $value);
+        }
+      } else {
+        $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
+        $this->handle_errors();
+      }
+    }
+  }
+
+  private function store_attribute(string $attribute, $value)
+  {
+    $this->OLD_ATTRIBUTES[$attribute] = $value;
   }
 
   private function set_attribute(string $attribute, $value)
@@ -128,12 +156,11 @@ class ActiveRecord extends Base
     unset($this->ATTRIBUTES[$attribute]);
   }
 
-  // TODO: check against old value for update, if same, dont include in validation
   // create new db entry or update existing one
   public function save(): bool
   {
     // check if record exists
-    $exists = $this->does_exist();
+    $exists = $this->is_an_existing_record();
     $columns = $exists ? $this->get_updated_columns() : array_keys($this->validations);
 
     // run before validations
@@ -205,17 +232,20 @@ class ActiveRecord extends Base
     return true;
   }
 
-  private function does_exist(): bool
+  private function is_an_existing_record(): bool
   {
-    $exists = false;
+    if ($this->EXISTING_RECORD) {
+      return true;
+    }
+
     if (isset($this->id) && isset($this->ATTRIBUTES['id'])) {
       $sql = "SELECT 1 FROM {$this->TABLE} WHERE id = ?";
       $statement = self::$DB->prepare($sql);
       $statement->execute([$this->id]);
-      $exists = $statement->fetchColumn() > 0;
+      return $statement->fetchColumn() > 0;
     }
 
-    return $exists;
+    return false;
   }
 
   private function get_updated_columns(): array
@@ -381,29 +411,6 @@ class ActiveRecord extends Base
     // run after update
 
     return true;
-  }
-
-  private function map_attributes(array $attributes, int $existsence = 1)
-  {
-    // $exstence:
-    // 0 = new record
-    // 1 = existing record
-    foreach ($attributes as $attribute => $value) {
-      if (property_exists($this, $attribute)) {
-        switch ($existsence) {
-          case 1:
-            $this->set_attribute($attribute, $value);
-            $this->OLD_ATTRIBUTES[$attribute] = $value;
-            break;
-          default:
-            $this->set_attribute($attribute, $value);
-            break;
-        }
-      } else {
-        $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
-        $this->handle_errors();
-      }
-    }
   }
 
 
