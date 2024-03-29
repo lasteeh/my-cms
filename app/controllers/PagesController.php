@@ -20,13 +20,13 @@ class PagesController extends ApplicationController
   }
   public function edit()
   {
-    $page = (new Page)->find_by(['id' => $this->get_route_param('id')]);
+    $page = $this->set_page();
     $this->set_object('page', $page);
     $this->render();
   }
   public function update()
   {
-    $page = (new Page)->find_by(['id' => $this->get_route_param('id')]);
+    $page = $this->set_page();
     list($page, $error_messages) = $page->revise($this->page_params());
     if ($error_messages) {
       $this->set_errors($error_messages);
@@ -51,6 +51,7 @@ class PagesController extends ApplicationController
   }
   protected function set_page()
   {
+    return (new Page)->find_by(['id' => $this->get_route_param('id')]);
   }
 
   private function page_params(): array
