@@ -70,13 +70,13 @@ class User extends Application_Record
     $record = $this->find_user_by_email($login_params['email']);
 
     if (!$record) {
-      $this->ERRORS[] = 'invalid email';
-      return [null, $this->ERRORS];
+      $this->add_error('invalid email');
+      return [null, $this->all_errors()];
     }
 
     if (!password_verify($login_params['password'], $this->password)) {
-      $this->ERRORS[] = 'invalid password';
-      return [null, $this->ERRORS];
+      $this->add_error('invalid password');
+      return [null, $this->all_errors()];
     }
 
 

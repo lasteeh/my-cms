@@ -29,7 +29,7 @@ class PagesController extends ApplicationController
     $page = (new Page)->find_by(['id' => $this->get_route_param('id')]);
     list($page, $error_messages) = $page->revise($this->page_params());
     if ($error_messages) {
-      $this->ERRORS = $error_messages;
+      $this->set_errors($error_messages);
       $this->set_object('page', $page);
       $this->render('edit');
     } else {
@@ -43,7 +43,7 @@ class PagesController extends ApplicationController
     list($page, $error_messages) = $page->publish($this->page_params());
 
     if ($error_messages) {
-      $this->ERRORS = $error_messages;
+      $this->set_errors($error_messages);
       $this->render('new');
     } else {
       $this->redirect('/dashboard/pages');

@@ -25,7 +25,7 @@ class UsersController extends ApplicationController
     list($user, $error_messages) = $user->register($user_params);
 
     if ($error_messages) {
-      $this->ERRORS = $error_messages;
+      $this->set_errors($error_messages);
       $this->render('new');
     } else {
       $this->redirect('/login');

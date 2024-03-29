@@ -9,6 +9,26 @@ trait ErrorHandling
   public array $ERRORS = [];
   protected static $ENVIRONMENT = 'CLI';
 
+  public function set_errors(array $errors)
+  {
+    $this->ERRORS = $errors;
+  }
+
+  public function add_error(string $error)
+  {
+    $this->ERRORS[] = $error;
+  }
+
+  public function clear_errors()
+  {
+    $this->ERRORS = [];
+  }
+
+  public function all_errors()
+  {
+    return $this->ERRORS;
+  }
+
   public function handle_errors($message = '')
   {
     $number_of_errors = count($this->ERRORS) > 1 ? 'Errors' : 'Error';
