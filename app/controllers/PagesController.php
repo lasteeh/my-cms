@@ -14,16 +14,19 @@ class PagesController extends ApplicationController
     $this->set_object('pages', $pages);
     $this->render();
   }
+
   public function new()
   {
     $this->render();
   }
+
   public function edit()
   {
     $page = $this->set_page();
     $this->set_object('page', $page);
     $this->render();
   }
+
   public function update()
   {
     $page = $this->set_page();
@@ -49,6 +52,7 @@ class PagesController extends ApplicationController
       $this->redirect('/dashboard/pages');
     }
   }
+
   protected function set_page()
   {
     return (new Page)->find_by(['id' => $this->get_route_param('id')]);
