@@ -16,6 +16,7 @@ class ActiveRecord extends Base
   private $MODEL;
   private static $DB;
   private $ATTRIBUTES = [];
+  private $OLD_ATTRIBUTES = [];
 
   protected static $skip_before_validate = [];
   protected static $before_validate = [];
@@ -96,12 +97,22 @@ class ActiveRecord extends Base
 
     return $this;
   }
+  // set array key value pairs to object variables for a existing record
+  public function exist(array $object_params): object
+  {
+    $this->reset();
+    new self();
+    $this->map_attributes($object_params, 1);
+
+    return $this;
+  }
 
   private function reset()
   {
-    // Reset attributes and errors
+    // reset attributes and errors
     unset($this->id);
     $this->ATTRIBUTES = [];
+    $this->OLD_ATTRIBUTES = [];
     $this->ERRORS = [];
   }
 
@@ -121,11 +132,15 @@ class ActiveRecord extends Base
   // create new db entry or update existing one
   public function save(): bool
   {
+    // check if record exists
+    $exists = $this->does_exist();
+    $columns = $exists ? $this->get_updated_columns() : array_keys($this->validations);
+
     // run before validations
     $this->run_callback('before_validate');
 
     // run validations
-    if (!$this->validate()) {
+    if (!$this->validate($columns)) {
       return false;
     }
 
@@ -133,15 +148,6 @@ class ActiveRecord extends Base
 
     // run before save
     $this->run_callback('before_save');
-
-    // check if record exists
-    $exists = false;
-    if (isset($this->id) && isset($this->ATTRIBUTES['id'])) {
-      $sql = "SELECT 1 FROM users WHERE id = ?";
-      $statement = self::$DB->prepare($sql);
-      $statement->execute([$this->id]);
-      $exists = $statement->fetchColumn() > 0;
-    }
 
     // actual save function
     $sql = "";
@@ -199,6 +205,32 @@ class ActiveRecord extends Base
     return true;
   }
 
+  private function does_exist(): bool
+  {
+    $exists = false;
+    if (isset($this->id) && isset($this->ATTRIBUTES['id'])) {
+      $sql = "SELECT 1 FROM {$this->TABLE} WHERE id = ?";
+      $statement = self::$DB->prepare($sql);
+      $statement->execute([$this->id]);
+      $exists = $statement->fetchColumn() > 0;
+    }
+
+    return $exists;
+  }
+
+  private function get_updated_columns(): array
+  {
+    $updated_columns = [];
+
+    foreach ($this->ATTRIBUTES as $key => $value) {
+      if ($value !== $this->OLD_ATTRIBUTES[$key]) {
+        $updated_columns[] = $key;
+      }
+    }
+
+    return $updated_columns;
+  }
+
   private function run_callback($callback_name)
   {
     $skip_callback_name = "skip_{$callback_name}";
@@ -220,10 +252,6 @@ class ActiveRecord extends Base
     if (empty($this->ATTRIBUTES)) {
       $this->ERRORS[] = "{$this->MODEL} is empty";
       return false;
-    }
-
-    if (empty($columns)) {
-      $columns = array_keys($this->validations);
     }
 
     // run each validators in foreach
@@ -355,11 +383,22 @@ class ActiveRecord extends Base
     return true;
   }
 
-  private function map_attributes(array $attributes)
+  private function map_attributes(array $attributes, int $existsence = 1)
   {
+    // $exstence:
+    // 0 = new record
+    // 1 = existing record
     foreach ($attributes as $attribute => $value) {
       if (property_exists($this, $attribute)) {
-        $this->set_attribute($attribute, $value);
+        switch ($existsence) {
+          case 1:
+            $this->set_attribute($attribute, $value);
+            $this->OLD_ATTRIBUTES[$attribute] = $value;
+            break;
+          default:
+            $this->set_attribute($attribute, $value);
+            break;
+        }
       } else {
         $this->ERRORS[] = "{$this->MODEL} property does not exist: {$attribute}";
         $this->handle_errors();
@@ -406,7 +445,7 @@ class ActiveRecord extends Base
       if (!$result) {
         return null;
       } else {
-        $this->new($result);
+        $this->exist($result);
         return $this;
       }
     } catch (\PDOException $e) {
