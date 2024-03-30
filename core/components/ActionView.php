@@ -12,9 +12,9 @@ class ActionView extends Base
 
   private array $OBJECTS = [];
 
-  protected string $controller_views_directory;
-  protected string $controller_action;
-  protected string $page_layout = '';
+  private string $controller_views_directory;
+  private string $controller_action;
+  private string $page_layout = '';
 
   public string $page_title = '';
 
@@ -26,12 +26,12 @@ class ActionView extends Base
   }
 
 
-  protected function VIEWS_DIR()
+  private function VIEWS_DIR()
   {
     return self::$ROOT_DIR . self::APP_DIR . '\\' . self::VIEWS_DIR . '\\';
   }
 
-  public function construct_controller_views_directory(string $controller_name)
+  private function construct_controller_views_directory(string $controller_name)
   {
     // old name creation
     // $controller_name = str_replace(ucfirst(self::APP_DIR) . '\\', '', $controller_name);
@@ -45,15 +45,22 @@ class ActionView extends Base
     $controller_name = preg_replace('/(?<!^)([A-Z])/', '_$1', $controller_name); // camelcase to underscore
     $controller_name = strtolower($controller_name) . "\\"; // convert to lowercase
 
+    $view_file_directory = $this->VIEWS_DIR() . $controller_name;
+
+    if (!is_dir($view_file_directory)) {
+      $this->ERRORS[] = "Views directory not found: {$view_file_directory}";
+      $this->handle_errors();
+    }
+
     return $controller_name;
   }
 
-  protected function get_view_file(string $action)
+  private function get_view_file(string $action)
   {
     return $this->VIEWS_DIR() . $this->controller_views_directory . $action . self::VIEW_FILE_EXT;
   }
 
-  protected function get_layout_file(string $layout, string $directory = self::LAYOUTS_DIR)
+  private function get_layout_file(string $layout, string $directory = self::LAYOUTS_DIR)
   {
     $layout_directory = $directory ?? self::LAYOUTS_DIR;
 

@@ -44,7 +44,8 @@ return [
     'GET' => 'pages@edit',
   ],
 
-  '/:parent/:child/:slug/' => [
-    'GET' => 'pages@show',
-  ]
+  // keyword "unmatched" sets catch-all 
+  'unmatched' => [
+    'GET' => 'pages@show', // default value 'GET' => 'application@not_found'
+  ],
 ];

@@ -24,17 +24,25 @@ class ActiveRecord extends Base
   protected static $skip_after_validate = [];
   protected static $after_validate = [];
 
+  protected static $validate = [];
+  protected static $skip_validate = [];
+
   protected $validations = [];
+
+  protected static $skip_before_update = [];
+  protected static $before_update = [];
+  protected static $skip_after_update = [];
+  protected static $after_update = [];
 
   protected static $skip_before_save = [];
   protected static $before_save = [];
   protected static $skip_after_save = [];
   protected static $after_save = [];
 
-  protected static $skip_before_update = [];
-  protected static $before_update = [];
-  protected static $skip_after_update = [];
-  protected static $after_update = [];
+  protected static $skip_before_create = [];
+  protected static $before_create = [];
+  protected static $skip_after_create = [];
+  protected static $after_create = [];
 
   public function __construct(array $model_object = [])
   {
@@ -51,18 +59,28 @@ class ActiveRecord extends Base
     // setup callbacks
     $this->setup_callback('skip_before_validate');
     $this->setup_callback('before_validate');
+
+    $this->setup_callback('validate');
+    $this->setup_callback('skip_validate');
+
     $this->setup_callback('skip_after_validate');
     $this->setup_callback('after_validate');
 
     $this->setup_callback('skip_before_save');
     $this->setup_callback('before_save');
-    $this->setup_callback('skip_after_save');
-    $this->setup_callback('after_save');
 
     $this->setup_callback('skip_before_update');
     $this->setup_callback('before_update');
-    $this->setup_callback('skip_before_save');
-    $this->setup_callback('before_save');
+    $this->setup_callback('skip_after_update');
+    $this->setup_callback('after_update');
+
+    $this->setup_callback('skip_before_create');
+    $this->setup_callback('before_create');
+    $this->setup_callback('skip_after_create');
+    $this->setup_callback('after_create');
+
+    $this->setup_callback('skip_after_save');
+    $this->setup_callback('after_save');
   }
 
   private function setup_callback(string $callback_name)
@@ -171,7 +189,16 @@ class ActiveRecord extends Base
       return false;
     }
 
+    // run custom validations
+    $this->run_callback('validate');
+
+    // check for errors
+    if ($this->has_errors()) {
+      return false;
+    }
+
     // run after validations
+    $this->run_callback('after_validate');
 
     // run before save
     $this->run_callback('before_save');
@@ -180,6 +207,10 @@ class ActiveRecord extends Base
     $sql = "";
     $param_values = [];
     if ($exists) {
+
+      // run before update
+      $this->run_callback('before_update');
+
       // update existing record here
       $sql = "UPDATE {$this->TABLE} SET ";
       $set = "";
@@ -193,6 +224,10 @@ class ActiveRecord extends Base
 
       $sql .= $set . " WHERE id = :id";
     } else {
+
+      // run before create
+      $this->run_callback('before_create');
+
       // insert new record here
       $sql = "INSERT INTO {$this->TABLE} (";
       $values = "VALUES (";
@@ -221,6 +256,14 @@ class ActiveRecord extends Base
       }
 
       $statement->execute();
+
+      if ($exists) {
+        // run after update
+        $this->run_callback('after_update');
+      } else {
+        // run after create
+        $this->run_callback('after_create');
+      }
     } catch (\PDOException $e) {
       $this->ERRORS[] = $e->getMessage();
       $this->handle_errors();
@@ -228,6 +271,7 @@ class ActiveRecord extends Base
 
 
     // run after save
+    $this->run_callback('after_save');
 
     return true;
   }
@@ -272,9 +316,9 @@ class ActiveRecord extends Base
     }
   }
 
-  private function callback_should_skip(string $callback, array $skip_after_save_array): bool
+  private function callback_should_skip(string $callback, array $skip_callback_array): bool
   {
-    return in_array($callback, $skip_after_save_array);
+    return in_array($callback, $skip_callback_array);
   }
 
   private function validate(array $columns = []): bool

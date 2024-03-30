@@ -86,6 +86,19 @@ class Request extends Base
 
     // if no match found, add error to Request
     if (!$match_found) {
+      if (isset($configured_routes['unmatched'])) {
+        $unmatched_route = $configured_routes['unmatched'];
+        foreach ($unmatched_route as $method =>  $controller_name_action_pair) {
+          if ($_SERVER['REQUEST_METHOD'] === $method) {
+            $this->METHOD = $method;
+            list($controller_name, $controller_action) = explode('@', $controller_name_action_pair);
+            $this->CONTROLLER['name'] = $controller_name;
+            $this->CONTROLLER['action'] = $controller_action;
+            break;
+          }
+        }
+      }
+
       $this->ERRORS[] = "No matching route for {$_SERVER['REQUEST_METHOD']} {$this->URI}";
     }
   }

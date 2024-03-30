@@ -8,6 +8,7 @@ use App\Controllers\ApplicationController;
 
 class ActionController extends Base
 {
+  protected string $REQUEST_URI = '';
   protected array $ROUTE_PARAMS = [];
   protected array $PAGE_INFO = [];
   protected string $PAGE_LAYOUT = 'application';
@@ -72,8 +73,21 @@ class ActionController extends Base
   {
     return $this->ROUTE_PARAMS[$parameter] ?? null;
   }
+  public function get_route_params(): array
+  {
+    return $this->ROUTE_PARAMS;
+  }
 
-  public function render(string $action = '')
+  public function set_request_uri(string $request_uri)
+  {
+    $this->REQUEST_URI = $request_uri;
+  }
+  public function get_request_uri()
+  {
+    return $this->REQUEST_URI;
+  }
+
+  public function render(string $action = '', string $controller_name = '')
   {
     // Use debug_backtrace() to get the calling function's name
     if ($action === '' || $action === null) {
@@ -82,9 +96,11 @@ class ActionController extends Base
       $action = $calling_function;
     }
 
-    $controller = get_class($this);
+    if ($controller_name === '') {
+      $controller_name = get_class($this);
+    }
 
-    $page = new ActionView($controller, $action);
+    $page = new ActionView($controller_name, $action);
     $page->prepare($this->PAGE_INFO, $this->PAGE_LAYOUT, $this->ERRORS, $this->OBJECTS);
     $page->view();
   }

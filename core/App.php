@@ -26,8 +26,9 @@ class App extends Base
     $controller = $this->fetch_controller($request);
     $action = $this->fetch_action($request, $controller);
     $route_parameters = $request->ROUTE_PARAMETERS;
+    $request_uri = $request->URI;
 
-    $this->run_controller_action($controller, $action, $route_parameters);
+    $this->run_controller_action($controller, $action, $route_parameters, $request_uri);
   }
 
   protected function load_routes()
@@ -83,7 +84,7 @@ class App extends Base
     }
   }
 
-  protected function run_controller_action(?object $controller, ?string $action, ?array $route_parameters)
+  protected function run_controller_action(?object $controller, ?string $action, ?array $route_parameters, ?string $request_uri)
   {
     if (!is_object($controller) || $controller === null || !$controller) {
       $this->ERRORS[] = "Controller not found: \"{$controller}\"";
@@ -91,6 +92,7 @@ class App extends Base
     }
 
     if (method_exists($controller, $action)) {
+      $controller->set_request_uri($request_uri);
       $controller->set_route_params($route_parameters);
       $controller->execute($action);
     } else {

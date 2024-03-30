@@ -13,9 +13,14 @@ class Page extends Application_Record
   public string $content;
   public string $created_at;
   public string $updated_at;
+  public $parent_id;
 
   protected static $before_validate = [
-    'normalize_slug',
+    'nullify_empty_parent_id',
+  ];
+  protected static $validate = [
+    'prevent_parent_self_reference',
+    'prevent_slug_special_chars',
   ];
 
   protected $validations = [
@@ -27,6 +32,10 @@ class Page extends Application_Record
       'presence' => true,
       'uniqueness' => true,
     ],
+  ];
+
+  protected static $after_validate = [
+    'normalize_slug',
   ];
 
   public function publish(array $page_params): array
@@ -59,5 +68,28 @@ class Page extends Application_Record
     $slug = trim($slug, '-');
 
     $this->update_attribute('slug', $slug);
+  }
+
+  protected function prevent_parent_self_reference()
+  {
+    if ($this->id === (int)$this->parent_id) {
+      $this->add_error("Parent cannot be itself");
+    }
+  }
+
+  protected function prevent_slug_special_chars()
+  {
+    $invalid_chars = preg_match('/[^a-zA-Z0-9_-]/', $this->slug);
+
+    if ($invalid_chars) {
+      $this->add_error("Slug can only contain letters, numbers, underscores, and hyphens.");
+    }
+  }
+
+  protected function nullify_empty_parent_id()
+  {
+    if ($this->parent_id === '') {
+      $this->update_attribute('parent_id', null);
+    }
   }
 }
