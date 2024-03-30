@@ -10,7 +10,7 @@ trait ErrorHandling
   protected static $ENVIRONMENT = 'CLI';
 
 
-  public function all_errors()
+  public function all_errors(): array
   {
     return $this->ERRORS;
   }
@@ -18,6 +18,11 @@ trait ErrorHandling
   public function clear_errors()
   {
     $this->ERRORS = [];
+  }
+
+  public function has_errors(): bool
+  {
+    return count($this->ERRORS) > 0;
   }
 
   public function set_errors(array $errors)
