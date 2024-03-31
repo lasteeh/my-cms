@@ -7,6 +7,12 @@ use App\Models\Page;
 
 class PagesController extends ApplicationController
 {
+  protected static $skip_before_action = [
+    'authenticate_request'  => [
+      'only' => ['show'],
+    ],
+  ];
+
   public function index()
   {
     $pages = (new Page)->all();
