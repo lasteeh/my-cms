@@ -17,9 +17,10 @@ class Page extends Application_Record
 
   protected static $before_validate = [
     'nullify_empty_parent_id',
+    'normalize_slug',
   ];
   protected static $validate = [
-    'prevent_parent_self_reference',
+    'validate_parent_id',
     'prevent_slug_special_chars',
   ];
 
@@ -32,10 +33,6 @@ class Page extends Application_Record
       'presence' => true,
       'uniqueness' => true,
     ],
-  ];
-
-  protected static $after_validate = [
-    'normalize_slug',
   ];
 
   public function publish(array $page_params): array
@@ -54,15 +51,93 @@ class Page extends Application_Record
     return [$this, $this->ERRORS];
   }
 
+  public function show_page(array $uri_params): ?Page
+  {
+    // reverse the URI parameters to start from the last part
+    $uri_params = array_reverse($uri_params);
+
+    if (empty($uri_params)) {
+      return null;
+    }
+
+    $page_to_show = $this->find_by(['slug' => $uri_params[0]]);
+
+    if ($page_to_show === null) {
+      return null;
+    }
+
+    if (count($uri_params) > 1) {
+      for ($index = 0; $index < count($uri_params); $index++) {
+        $current_page = (new Page)->find_by(['slug' => $uri_params[$index]]);
+
+        if ($current_page === null) {
+          return null;
+        }
+
+        if ($index !== (count($uri_params) - 1)) {
+          if ($current_page === null || $current_page->parent_id === null) {
+            return null;
+          }
+
+          $parent_page = (new Page)->find_by(['slug' => $uri_params[$index + 1]]);
+
+          if ($parent_page === null || (string)$parent_page->id !== (string)$current_page->parent_id) {
+            return null;
+          }
+        } else {
+          if ($current_page->parent_id !== null) {
+            return null;
+          }
+        }
+      }
+    } else {
+      if ($page_to_show->parent_id !== null) {
+        return null;
+      }
+    }
+
+    // return the page to show if all checks passed
+    return $page_to_show;
+  }
+
   public function fetch_all_pages_for_index(): array
   {
     return $this->fetch_by([], ['id', 'title', 'slug', 'created_at']);
   }
 
-  public function fetch_all_pages_for_edit(): array
+  public function fetch_all_pages_for_new(): array
   {
     return $this->fetch_by([], ['id', 'title']);
   }
+  public function fetch_all_pages_for_edit(): array
+  {
+    $pages = $this->fetch_by([], ['id', 'title', 'parent_id']);
+    $filtered_pages = [];
+
+    // recursive function to find all descendants of a page
+    $find_descendants = function ($id, &$descendants) use ($pages, &$find_descendants) {
+      foreach ($pages as $page) {
+        if ($page['parent_id'] == $id) {
+          $descendants[] = $page['id'];
+          $find_descendants($page['id'], $descendants);
+        }
+      }
+    };
+
+    // find all descendants of the current page
+    $descendants = [$this->id];
+    $find_descendants($this->id, $descendants);
+
+    // filter out pages that are descendants of the current page
+    foreach ($pages as $page) {
+      if (!in_array($page['id'], $descendants)) {
+        $filtered_pages[] = $page;
+      }
+    }
+
+    return $filtered_pages;
+  }
+
 
   protected function normalize_slug()
   {
@@ -80,10 +155,35 @@ class Page extends Application_Record
     $this->update_attribute('slug', $slug);
   }
 
-  protected function prevent_parent_self_reference()
+  protected function validate_parent_id()
   {
-    if ($this->id === (int)$this->parent_id) {
-      $this->add_error("Parent cannot be itself");
+    // check if parent_id is set and not null
+    if ($this->parent_id !== null) {
+      if ((string)$this->id === (string)$this->parent_id) {
+        $this->add_error("Parent cannot be itself");
+      }
+
+      // fetch all pages
+      $pages = $this->fetch_by([], ['id', 'title', 'parent_id']);
+
+      // recursive function to find all descendants of a page
+      $find_descendants = function ($id, &$descendants) use ($pages, &$find_descendants) {
+        foreach ($pages as $page) {
+          if ($page['parent_id'] == $id) {
+            $descendants[] = $page['id'];
+            $find_descendants($page['id'], $descendants);
+          }
+        }
+      };
+
+      // find all descendants of the current page
+      $descendants = [];
+      $find_descendants($this->id, $descendants);
+
+      // check if the parent_id is the current page or one of its descendants
+      if (in_array($this->parent_id, $descendants)) {
+        $this->add_error("Parent cannot be a descendant of this page.");
+      }
     }
   }
 

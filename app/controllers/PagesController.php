@@ -23,14 +23,12 @@ class PagesController extends ApplicationController
 
   public function show()
   {
-    // TODO: implement showing of pages here
-    $uri = $this->get_request_uri();
-    $uri_params = explode('/', $uri);
-    var_dump($this->get_request_uri());
-    var_dump($uri_params);
+    $uri_params = $this->get_request_uri_params();
+    $current_page = (new Page)->show_page($uri_params);
 
     $this->set_layout('page');
-    if (false) {
+    if ($current_page) {
+      $this->set_object('current_page', $current_page);
       $this->render();
     } else {
       $this->render('not_found', 'application');
@@ -39,7 +37,7 @@ class PagesController extends ApplicationController
 
   public function new()
   {
-    $pages = (new Page)->fetch_all_pages_for_edit();
+    $pages = (new Page)->fetch_all_pages_for_new();
     $this->set_object('pages', $pages);
     $this->render();
   }
@@ -83,7 +81,7 @@ class PagesController extends ApplicationController
   public function create()
   {
     $page = new Page;
-    $pages = $page->fetch_all_pages_for_edit();
+    $pages = $page->fetch_all_pages_for_new();
     list($page, $error_messages) = $page->publish($this->page_params());
 
     if ($error_messages) {

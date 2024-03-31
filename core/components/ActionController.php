@@ -86,6 +86,13 @@ class ActionController extends Base
   {
     return $this->REQUEST_URI;
   }
+  public function get_request_uri_params()
+  {
+    $uri = ltrim($this->REQUEST_URI, "/");
+    $uri_params = explode('/', $uri);
+
+    return $uri_params;
+  }
 
   public function render(string $action = '', string $controller_name = '')
   {

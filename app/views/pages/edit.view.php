@@ -22,10 +22,8 @@ $edit_link = $this->get_url($edit_url);
     <option value="">No Parent</option>
     <?php
     foreach ($pages as $page) {
-      if ($page['id'] !== $current_page->id) {
-        $selected = ((string)$current_page->parent_id === (string)$page["id"]) ? "selected" : "";
-        echo "<option value=\"{$page["id"]}\" {$selected} >{$page["title"]}</option>";
-      }
+      $selected = ((string)$current_page->parent_id === (string)$page["id"]) ? "selected" : "";
+      echo "<option value=\"{$page["id"]}\" {$selected} >{$page["title"]}</option>";
     }
     ?>
   </select>
