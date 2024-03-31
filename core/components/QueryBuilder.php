@@ -36,6 +36,10 @@ class QueryBuilder
       $placeholders[$placeholder] = $value;
     }
 
+    if (empty($conditions)) {
+      $sql = rtrim($sql, " WHERE ");
+    }
+
     return [rtrim($sql, " AND "), $placeholders];
   }
 }

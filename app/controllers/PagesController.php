@@ -15,7 +15,7 @@ class PagesController extends ApplicationController
 
   public function index()
   {
-    $pages = (new Page)->all();
+    $pages = (new Page)->fetch_all_pages_for_index();
 
     $this->set_object('pages', $pages);
     $this->render();
@@ -39,7 +39,7 @@ class PagesController extends ApplicationController
 
   public function new()
   {
-    $pages = (new Page)->all();
+    $pages = (new Page)->fetch_all_pages_for_edit();
     $this->set_object('pages', $pages);
     $this->render();
   }
@@ -49,7 +49,7 @@ class PagesController extends ApplicationController
     $current_page = $this->set_current_page();
 
     if ($current_page) {
-      $pages = $current_page->all();
+      $pages = $current_page->fetch_all_pages_for_edit();
 
       $this->set_object('current_page', $current_page);
       $this->set_object('pages', $pages);
@@ -64,9 +64,9 @@ class PagesController extends ApplicationController
     $current_page = $this->set_current_page();
 
     if ($current_page) {
-      $pages = $current_page->all();
-
+      $pages = $current_page->fetch_all_pages_for_edit();
       list($current_page, $error_messages) = $current_page->revise($this->page_params());
+
       if ($error_messages) {
         $this->set_errors($error_messages);
         $this->set_object('current_page', $current_page);
@@ -83,7 +83,7 @@ class PagesController extends ApplicationController
   public function create()
   {
     $page = new Page;
-    $pages = $page->all();
+    $pages = $page->fetch_all_pages_for_edit();
     list($page, $error_messages) = $page->publish($this->page_params());
 
     if ($error_messages) {

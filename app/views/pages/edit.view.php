@@ -23,7 +23,7 @@ $edit_link = $this->get_url($edit_url);
     <?php
     foreach ($pages as $page) {
       if ($page['id'] !== $current_page->id) {
-        $selected = ($current_page->parent_id === $page["id"]) ? "selected" : "";
+        $selected = ((string)$current_page->parent_id === (string)$page["id"]) ? "selected" : "";
         echo "<option value=\"{$page["id"]}\" {$selected} >{$page["title"]}</option>";
       }
     }

@@ -54,6 +54,16 @@ class Page extends Application_Record
     return [$this, $this->ERRORS];
   }
 
+  public function fetch_all_pages_for_index(): array
+  {
+    return $this->fetch_by([], ['id', 'title', 'slug', 'created_at']);
+  }
+
+  public function fetch_all_pages_for_edit(): array
+  {
+    return $this->fetch_by([], ['id', 'title']);
+  }
+
   protected function normalize_slug()
   {
     $slug = $this->slug;
