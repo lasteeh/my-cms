@@ -391,19 +391,6 @@ class ActiveRecord extends Base
     return $errors;
   }
 
-  public function validate_uniqueness_by($column, $value)
-  {
-    $sql = "SELECT id FROM {$this->TABLE} WHERE {$column} = :value";
-
-    $statement = self::$DB->prepare($sql);
-    $statement->bindParam(':value', $value);
-    $statement->execute();
-
-    $record = $statement->fetch(\PDO::FETCH_ASSOC);
-
-    return $record;
-  }
-
   public function update_attribute(string $attribute, $value)
   {
     $this->set_attribute($attribute, $value);
@@ -433,7 +420,16 @@ class ActiveRecord extends Base
       return false;
     }
 
+    // run custom validations
+    $this->run_callback('validate');
+
+    // check for errors
+    if ($this->has_errors()) {
+      return false;
+    }
+
     // run after validations
+    $this->run_callback('after_validate');
 
     // run before update
     $this->run_callback('before_update');
@@ -453,6 +449,7 @@ class ActiveRecord extends Base
     }
 
     // run after update
+    $this->run_callback('after_update');
 
     return true;
   }
@@ -470,20 +467,44 @@ class ActiveRecord extends Base
     return $records;
   }
 
-  public function find_by(array $conditions): ?object
+  public function fetch_by(array $conditions, array $returned_columns = []): array
   {
+    $select_clause = QueryBuilder::build_select_clause($returned_columns, $this);
+
+    if (empty($select_clause)) {
+      $this->ERRORS[] = "No valid columns.";
+      $this->handle_errors();
+    }
+
     try {
-      $sql = "SELECT * FROM {$this->TABLE} WHERE ";
-      $placeholders = [];
+      $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
+      [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
 
-      foreach ($conditions as $column => $value) {
-        $placeholder = ":{$column}";
-
-        $sql .= "{$column} = {$placeholder} AND ";
-        $placeholders[$placeholder] = $value;
+      $statement = self::$DB->prepare($sql);
+      foreach ($placeholders as $placeholder => $value) {
+        $statement->bindValue($placeholder, $value);
       }
 
-      $sql = rtrim($sql, " AND ");
+      $statement->execute();
+      return $statement->fetchAll(\PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+  }
+
+  public function find_by(array $conditions, array $returned_columns = []): ?object
+  {
+    $select_clause = QueryBuilder::build_select_clause($returned_columns, $this);
+
+    if (empty($select_clause)) {
+      $this->ERRORS[] = "No valid columns.";
+      $this->handle_errors();
+    }
+
+    try {
+      $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
+      [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
 
       $statement = self::$DB->prepare($sql);
       foreach ($placeholders as $placeholder => $value) {
@@ -493,15 +514,23 @@ class ActiveRecord extends Base
 
       $result = $statement->fetch(\PDO::FETCH_ASSOC);
 
-      if (!$result) {
-        return null;
-      } else {
-        $this->exist($result);
-        return $this;
-      }
+      return $result ? $this->exist($result) : null;
     } catch (\PDOException $e) {
       $this->ERRORS[] = $e->getMessage();
       $this->handle_errors();
     }
+  }
+
+  public function validate_uniqueness_by($column, $value)
+  {
+    $sql = "SELECT id FROM {$this->TABLE} WHERE {$column} = :value";
+
+    $statement = self::$DB->prepare($sql);
+    $statement->bindParam(':value', $value);
+    $statement->execute();
+
+    $record = $statement->fetch(\PDO::FETCH_ASSOC);
+
+    return $record;
   }
 }
