@@ -5,9 +5,12 @@ namespace Core\Components;
 use Core\Base;
 use Core\Components\ActionView;
 use App\Controllers\ApplicationController;
+use Core\Traits\FlashHandling;
 
 class ActionController extends Base
 {
+  use FlashHandling;
+
   protected string $REQUEST_URI = '';
   protected array $ROUTE_PARAMS = [];
   protected array $PAGE_INFO = [];
@@ -94,8 +97,13 @@ class ActionController extends Base
     return $uri_params;
   }
 
-  public function render(string $action = '', string $controller_name = '')
+  public function render(string $action = '', ?string $controller_name = '', array $messages = [])
   {
+    // set session messages if provided
+    foreach ($messages as $type => $message) {
+      $this->set_flash($type, $message);
+    }
+
     // Use debug_backtrace() to get the calling function's name
     if ($action === '' || $action === null) {
       $backtrace = debug_backtrace();
@@ -103,7 +111,7 @@ class ActionController extends Base
       $action = $calling_function;
     }
 
-    if ($controller_name === '') {
+    if ($controller_name === '' || $controller_name === null) {
       $controller_name = get_class($this);
     }
 
@@ -112,9 +120,28 @@ class ActionController extends Base
     $page->view();
   }
 
-  public function redirect(string $url = '/')
+  public function redirect(string $url = '/', array $messages = [])
   {
-    header("Location:" . self::$ROOT_URL . $url);
+    $this->clear_flash();
+
+    // set session messages if provided
+    foreach ($messages as $type => $message) {
+      $this->set_flash($type, $message);
+    }
+
+
+    $params = [];
+
+    if (!empty($messages['errors'])) {
+      $params['errors'] = count($messages['errors']);
+    }
+
+    $redirect_url = self::$ROOT_URL . $url;
+    if (!empty($params)) {
+      $redirect_url .= '?' . http_build_query($params);
+    }
+
+    header("Location:" . $redirect_url);
     exit();
   }
 

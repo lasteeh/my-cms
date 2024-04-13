@@ -31,8 +31,7 @@ class SessionsController extends ApplicationController
     list($user, $error_messages) = $user->login($this->login_params());
 
     if ($error_messages) {
-      $this->set_errors($error_messages);
-      $this->render('new');
+      $this->redirect('/login', ['errors' => $error_messages]);
     } else {
       $this->redirect('/dashboard');
     }

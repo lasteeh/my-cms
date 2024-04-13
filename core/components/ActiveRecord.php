@@ -276,7 +276,7 @@ class ActiveRecord extends Base
     return true;
   }
 
-  private function is_an_existing_record(): bool
+  public function is_an_existing_record(): bool
   {
     if ($this->EXISTING_RECORD) {
       return true;
@@ -389,6 +389,11 @@ class ActiveRecord extends Base
     }
 
     return $errors;
+  }
+
+  public function get_attribute(string $attribute)
+  {
+    return $this->ATTRIBUTES[$attribute] ?? null;
   }
 
   public function update_attribute(string $attribute, $value)

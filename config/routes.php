@@ -44,8 +44,8 @@ return [
     'GET' => 'pages@edit',
   ],
 
-  // keyword "unmatched" sets catch-all 
-  'unmatched' => [
+  // keyword "no_match" sets catch-all 
+  'no_match' => [
     'GET' => 'pages@show', // default value 'GET' => 'application@not_found'
   ],
 ];

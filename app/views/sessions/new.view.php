@@ -1,10 +1,19 @@
-<ul>
-  <?php
-  foreach ($this->ERRORS as $error) {
-    echo "<li>{$error}</li>";
-  }
-  ?>
-</ul>
+<?php
+$errors = $this->get_flash('errors');
+?>
+
+<?php
+if ($errors) {  ?>
+  <ul>
+    <?php
+    foreach ($errors as $error) {
+      echo "<li>{$error}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+?>
 
 <h1>login page</h1>
 <form action="<?php $this->url('/login') ?>" method="post">

@@ -143,8 +143,10 @@ class Page extends Application_Record
   {
     $slug = $this->slug;
 
-    if (empty($slug)) {
-      $slug = $this->title;
+    if (!$this->is_an_existing_record()) {
+      if (empty($slug)) {
+        $slug = $this->title;
+      }
     }
 
     $slug = strtolower($slug);

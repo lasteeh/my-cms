@@ -3,14 +3,23 @@ $current_page = $this->get_object('current_page');
 $pages = $this->get_object('pages');
 $edit_url = "/dashboard/pages/{$current_page->id}";
 $edit_link = $this->get_url($edit_url);
+$errors = $this->get_flash('errors');
 ?>
-<ul>
-  <?php
-  foreach ($this->all_errors() as $error) {
-    echo "<li>{$error}</li>";
-  }
-  ?>
-</ul>
+
+
+<?php
+if ($errors) {  ?>
+  <ul>
+    <?php
+    foreach ($errors as $error) {
+      echo "<li>{$error}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+?>
+
 <h1>edit page</h1>
 <form action="<?php echo $edit_link ?>" method="post">
   <input type="text" value="<?php echo $current_page->title ?>" placeholder="title" name="title">

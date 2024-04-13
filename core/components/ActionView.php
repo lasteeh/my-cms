@@ -3,10 +3,12 @@
 namespace Core\Components;
 
 use Core\Base;
-use Core\App;
+use Core\Traits\FlashHandling;
 
 class ActionView extends Base
 {
+  use FlashHandling;
+
   private const VIEW_FILE_EXT = '.view.php';
   private const LAYOUTS_DIR = 'layouts\\';
 
@@ -100,6 +102,7 @@ class ActionView extends Base
 
     if (file_exists($view_file)) {
       include $layout_file;
+      $this->clear_flash();
       exit;
     } else {
       // handle errors: view file 404

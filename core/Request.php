@@ -62,9 +62,12 @@ class Request extends Base
         $route_pattern = str_replace('/', '\/', $route);
         $route_pattern = '#^' . preg_replace('/:([^\s\/]+)/', '([^\/]+)', $route_pattern) . '$#';
 
+        // excludes url parameters
+        $base_url = explode("?", $this->URI);
+
         // check if the current request URI matches the route pattern
         // and if the HTTP method matches the specified method.
-        if (preg_match($route_pattern, $this->URI, $matches) && $_SERVER['REQUEST_METHOD'] === $method) {
+        if (preg_match($route_pattern, $base_url[0], $matches) && $_SERVER['REQUEST_METHOD'] === $method) {
           // Extract parameter values and set Request parameters
           preg_match_all('/:([^\s\/]+)/', $route, $parameter_keys);
           foreach ($parameter_keys[1] as $index => $key) {
@@ -86,8 +89,8 @@ class Request extends Base
 
     // if no match found, add error to Request
     if (!$match_found) {
-      if (isset($configured_routes['unmatched'])) {
-        $unmatched_route = $configured_routes['unmatched'];
+      if (isset($configured_routes['no_match'])) {
+        $unmatched_route = $configured_routes['no_match'];
         foreach ($unmatched_route as $method =>  $controller_name_action_pair) {
           if ($_SERVER['REQUEST_METHOD'] === $method) {
             $this->METHOD = $method;

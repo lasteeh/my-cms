@@ -1,13 +1,21 @@
 <?php
 $pages = $this->get_object('pages');
+$errors = $this->get_flash('errors');
 ?>
-<ul>
-  <?php
-  foreach ($this->ERRORS as $error) {
-    echo "<li>{$error}</li>";
-  }
-  ?>
-</ul>
+
+<?php
+if ($errors) {  ?>
+  <ul>
+    <?php
+    foreach ($errors as $error) {
+      echo "<li>{$error}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+?>
+
 <h1>new page</h1>
 <form action="<?php $this->url('/dashboard/pages') ?>" method="post">
   <input type="text" placeholder="title" name="title">

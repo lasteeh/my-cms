@@ -62,14 +62,10 @@ class PagesController extends ApplicationController
     $current_page = $this->set_current_page();
 
     if ($current_page) {
-      $pages = $current_page->fetch_all_pages_for_edit();
       list($current_page, $error_messages) = $current_page->revise($this->page_params());
 
       if ($error_messages) {
-        $this->set_errors($error_messages);
-        $this->set_object('current_page', $current_page);
-        $this->set_object('pages', $pages);
-        $this->render('edit');
+        $this->redirect("/dashboard/pages/{$current_page->id}/edit", ['errors' => $error_messages]);
       } else {
         $this->redirect('/dashboard/pages');
       }
@@ -81,13 +77,10 @@ class PagesController extends ApplicationController
   public function create()
   {
     $page = new Page;
-    $pages = $page->fetch_all_pages_for_new();
     list($page, $error_messages) = $page->publish($this->page_params());
 
     if ($error_messages) {
-      $this->set_object('pages', $pages);
-      $this->set_errors($error_messages);
-      $this->render('new');
+      $this->redirect('/dashboard/pages/new', ['errors' => $error_messages]);
     } else {
       $this->redirect('/dashboard/pages');
     }
