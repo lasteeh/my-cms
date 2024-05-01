@@ -23,6 +23,8 @@ if ($errors) {  ?>
   <input type="text" placeholder="sub title" name="sub_title">
   <input type="text" placeholder="description" name="description">
   <input type="text" placeholder="content" name="content">
+  <input type="text" placeholder="custom css" name="custom_css">
+  <input type="text" placeholder="custom js" name="custom_js">
   <select name="parent_id">
     <option value="" selected disabled>Parent Page</option>
     <option value="">No Parent</option>

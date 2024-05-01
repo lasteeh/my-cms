@@ -28,6 +28,9 @@ class PagesController extends ApplicationController
 
     $this->set_layout('page');
     if ($current_page) {
+      $this->set_page_info(['title' => $current_page->title]);
+      $this->set_inline_style($current_page->custom_css);
+      $this->set_inline_script($current_page->custom_js);
       $this->set_object('current_page', $current_page);
       $this->render();
     } else {
@@ -93,6 +96,6 @@ class PagesController extends ApplicationController
 
   private function page_params(): array
   {
-    return $this->params_permit(['slug', 'title', 'sub_title', 'description', 'content', 'parent_id'], $_POST);
+    return $this->params_permit(['slug', 'title', 'sub_title', 'description', 'content', 'custom_css', 'custom_js', 'parent_id'], $_POST);
   }
 }

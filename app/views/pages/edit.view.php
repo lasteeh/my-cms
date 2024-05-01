@@ -27,6 +27,8 @@ if ($errors) {  ?>
   <input type="text" value="<?php echo $current_page->sub_title ?>" placeholder="sub title" name="sub_title">
   <input type="text" value="<?php echo $current_page->description ?>" placeholder="description" name="description">
   <input type="text" value="<?php echo $current_page->content ?>" placeholder="content" name="content">
+  <input type="text" value="<?php echo $current_page->custom_css ?>" placeholder="custom css" name="custom_css">
+  <input type="text" value="<?php echo $current_page->custom_js ?>" placeholder="custom js" name="custom_js">
   <select name="parent_id">
     <option value="">No Parent</option>
     <?php

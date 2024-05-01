@@ -16,9 +16,10 @@ class ActionView extends Base
 
   private string $controller_views_directory;
   private string $controller_action;
+  private array $page_info = [];
   private string $page_layout = '';
-
-  public string $page_title = '';
+  private string $inline_style = '';
+  private string $inline_script = '';
 
 
   public function __construct(string $controller_name, string $action)
@@ -78,20 +79,26 @@ class ActionView extends Base
   }
 
 
-  public function prepare(array $page_info = [], string $page_layout, array $page_errors = [], array $objects = [])
+  public function prepare(array $config)
   {
-    $this->page_title = isset($page_info['page_title']) && is_string($page_info['page_title']) ? $page_info['page_title'] : '';
+    $page_info = $config['page_info'];
+    $page_layout = $config['page_layout'];
+    $inline_css = $config['inline_css'];
+    $inline_js = $config['inline_js'];
+    $objects = $config['objects'];
+    $page_errors = $config['errors'];
 
+    $this->page_info = $page_info;
     $this->page_layout = $page_layout;
-
-    $this->ERRORS = $page_errors;
-
+    $this->inline_style = $inline_css;
+    $this->inline_script = $inline_js;
     $this->OBJECTS = $objects;
+    $this->ERRORS = $page_errors;
   }
 
   public function get_object(string $name)
   {
-    return $this->OBJECTS[$name];
+    return $this->OBJECTS[$name] ?? null;
   }
 
 
@@ -129,5 +136,30 @@ class ActionView extends Base
   public function script(string $file_name)
   {
     echo static::$ROOT_URL . "/public/assets/js/" . $file_name . ".js";
+  }
+
+  public function inline_style()
+  {
+    $style = $this->inline_style;
+
+    if (!empty($this->inline_style)) {
+      echo "<style>$style</style>";
+    }
+  }
+  public function inline_script()
+  {
+    $script = $this->inline_script;
+
+    if (!empty($this->inline_script)) {
+      echo "<script>$script</script>";
+    }
+  }
+  public function page_info(string $key)
+  {
+    $info = $this->page_info[$key] ?? '';
+
+    if (!empty($info) && is_string($info)) {
+      echo $info;
+    }
   }
 }

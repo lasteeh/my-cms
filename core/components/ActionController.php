@@ -22,6 +22,8 @@ class ActionController extends Base
   protected static $after_action = [];
 
   private array $OBJECTS = [];
+  private string $INLINE_CSS = '';
+  private string $INLINE_JS = '';
 
   public function __construct()
   {
@@ -115,8 +117,17 @@ class ActionController extends Base
       $controller_name = get_class($this);
     }
 
+    $config = [
+      'page_info' => $this->PAGE_INFO,
+      'page_layout' => $this->PAGE_LAYOUT,
+      'inline_css' => $this->INLINE_CSS,
+      'inline_js' => $this->INLINE_JS,
+      'objects' => $this->OBJECTS,
+      'errors' => $this->ERRORS,
+    ];
+
     $page = new ActionView($controller_name, $action);
-    $page->prepare($this->PAGE_INFO, $this->PAGE_LAYOUT, $this->ERRORS, $this->OBJECTS);
+    $page->prepare($config);
     $page->view();
   }
 
@@ -173,13 +184,13 @@ class ActionController extends Base
     return $normalized_filters;
   }
 
-  protected function set_object(string $name, $object)
+  protected function set_object(string $name, mixed $object)
   {
     $this->OBJECTS[$name] = $object;
   }
 
 
-  protected function params_permit(array $permitted_fields, $user_input): array
+  protected function params_permit(array $permitted_fields, mixed $user_input): array
   {
     $params = [];
 
@@ -195,5 +206,19 @@ class ActionController extends Base
   protected function set_layout(string $layout)
   {
     $this->PAGE_LAYOUT = $layout;
+  }
+
+  protected function set_inline_style(?string $style)
+  {
+    $this->INLINE_CSS = $style ?? '';
+  }
+  protected function set_inline_script(?string $script)
+  {
+    $this->INLINE_JS = $script ?? '';
+  }
+
+  protected function set_page_info(array $page_info = [])
+  {
+    $this->PAGE_INFO = $page_info;
   }
 }

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?php echo $this->page_title; ?></title>
+  <title><?php $this->page_info('title'); ?></title>
   <link id="app-style" rel="stylesheet" href="<?php $this->stylesheet('application') ?>">
   <script id="app-script" src="<?php $this->script('application') ?>" defer></script>
 </head>

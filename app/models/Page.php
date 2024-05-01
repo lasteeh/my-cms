@@ -8,9 +8,11 @@ class Page extends Application_Record
 {
   public string $slug;
   public string $title;
-  public string $sub_title;
-  public string $description;
-  public string $content;
+  public ?string $sub_title;
+  public ?string $description;
+  public ?string $custom_css;
+  public ?string $custom_js;
+  public ?string $content;
   public string $created_at;
   public string $updated_at;
   public $parent_id;
@@ -102,7 +104,7 @@ class Page extends Application_Record
 
   public function fetch_all_pages_for_index(): array
   {
-    return $this->fetch_by([], ['id', 'title', 'slug', 'created_at']);
+    return $this->fetch_by([], ['id', 'title', 'slug', 'parent_id', 'created_at']);
   }
 
   public function fetch_all_pages_for_new(): array
