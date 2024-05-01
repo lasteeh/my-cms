@@ -9,8 +9,8 @@ return [
 
   /***
    * format:
-   * 'url' => [
-   * 'http_method' => 'controller@action',
+   * '/url' => [
+   * 'HTTP_METHOD' => 'controller@action',
    * ] 
    ***/
 
