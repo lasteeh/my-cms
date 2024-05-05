@@ -43,6 +43,9 @@ return [
   '/dashboard/pages/:id/edit' => [
     'GET' => 'pages@edit',
   ],
+  '/dashboard/pages/:id/delete' => [
+    'POST' => 'pages@delete',
+  ],
 
   // keyword "no_match" sets catch-all 
   'no_match' => [

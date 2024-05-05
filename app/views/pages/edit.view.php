@@ -1,8 +1,10 @@
 <?php
 $current_page = $this->get_object('current_page');
 $pages = $this->get_object('pages');
-$edit_url = "/dashboard/pages/{$current_page->id}";
-$edit_link = $this->get_url($edit_url);
+$edit_uri = "/dashboard/pages/{$current_page->id}";
+$edit_link = $this->get_url($edit_uri);
+$delete_uri = "/dashboard/pages/{$current_page->id}/delete";
+$delete_link = $this->get_url($delete_uri);
 $errors = $this->get_flash('errors');
 ?>
 
@@ -39,4 +41,7 @@ if ($errors) {  ?>
     ?>
   </select>
   <button type="submit">update</button>
+</form>
+<form action="<?php echo $delete_link ?>" method="post">
+  <button type="submit">delete</button>
 </form>

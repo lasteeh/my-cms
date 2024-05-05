@@ -44,6 +44,11 @@ class ActiveRecord extends Base
   protected static $skip_after_create = [];
   protected static $after_create = [];
 
+  protected static $skip_before_destroy = [];
+  protected static $before_destroy = [];
+  protected static $skip_after_destroy = [];
+  protected static $after_destroy = [];
+
   public function __construct(array $model_object = [])
   {
     self::$MODELS_DIRECTORY = self::APP_DIR . '\\' . self::MODELS_DIR;
@@ -59,15 +64,10 @@ class ActiveRecord extends Base
     // setup callbacks
     $this->setup_callback('skip_before_validate');
     $this->setup_callback('before_validate');
-
-    $this->setup_callback('validate');
     $this->setup_callback('skip_validate');
-
+    $this->setup_callback('validate');
     $this->setup_callback('skip_after_validate');
     $this->setup_callback('after_validate');
-
-    $this->setup_callback('skip_before_save');
-    $this->setup_callback('before_save');
 
     $this->setup_callback('skip_before_update');
     $this->setup_callback('before_update');
@@ -79,8 +79,15 @@ class ActiveRecord extends Base
     $this->setup_callback('skip_after_create');
     $this->setup_callback('after_create');
 
+    $this->setup_callback('skip_before_save');
+    $this->setup_callback('before_save');
     $this->setup_callback('skip_after_save');
     $this->setup_callback('after_save');
+
+    $this->setup_callback('skip_before_destroy');
+    $this->setup_callback('before_destroy');
+    $this->setup_callback('skip_after_destroy');
+    $this->setup_callback('after_destroy');
   }
 
   private function setup_callback(string $callback_name)
@@ -273,6 +280,32 @@ class ActiveRecord extends Base
     // run after save
     $this->run_callback('after_save');
 
+    return true;
+  }
+
+  public function destroy(): bool
+  {
+    if (!$this->is_an_existing_record()) {
+      $this->ERRORS[] = "{$this->MODEL} does not exist.";
+      return false;
+    }
+
+    // run before destroy callback
+    $this->run_callback('before_destroy');
+
+    // perform deletion
+    $sql = "DELETE FROM {$this->TABLE} WHERE id = :id";
+    try {
+      $statement = self::$DB->prepare($sql);
+      $statement->bindParam(":id", $this->id);
+      $statement->execute();
+
+      // run after destroy callback
+      $this->run_callback('after_destroy');
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
     return true;
   }
 

@@ -37,6 +37,10 @@ class Page extends Application_Record
     ],
   ];
 
+  protected static $before_destroy = [
+    'nullify_descendant_parent_id',
+  ];
+
   public function publish(array $page_params): array
   {
     $this->new($page_params);
@@ -49,6 +53,13 @@ class Page extends Application_Record
   {
     $this->update_attributes($page_params);
     $this->save();
+
+    return [$this, $this->ERRORS];
+  }
+
+  public function trash(): array
+  {
+    $this->destroy();
 
     return [$this, $this->ERRORS];
   }
@@ -161,33 +172,41 @@ class Page extends Application_Record
 
   protected function validate_parent_id()
   {
-    // check if parent_id is set and not null
-    if ($this->parent_id !== null) {
-      if ((string)$this->id === (string)$this->parent_id) {
-        $this->add_error("Parent cannot be itself");
-      }
+    // check if no parent_id is set (no validation required)
+    if (empty($this->parent_id)) {
+      return;
+    }
 
-      // fetch all pages
-      $pages = $this->fetch_by([], ['id', 'title', 'parent_id']);
+    // check if new record (no validation required)
+    if (empty($this->id)) {
+      return;
+    }
 
-      // recursive function to find all descendants of a page
-      $find_descendants = function ($id, &$descendants) use ($pages, &$find_descendants) {
-        foreach ($pages as $page) {
-          if ($page['parent_id'] == $id) {
-            $descendants[] = $page['id'];
-            $find_descendants($page['id'], $descendants);
-          }
+    // check if parent_id is set and not itself
+    if ((string)$this->id === (string)$this->parent_id) {
+      $this->add_error("Parent cannot be itself");
+    }
+
+    // fetch all pages
+    $pages = $this->fetch_by([], ['id', 'title', 'parent_id']);
+
+    // recursive function to find all descendants of a page
+    $find_descendants = function ($id, &$descendants) use ($pages, &$find_descendants) {
+      foreach ($pages as $page) {
+        if ($page['parent_id'] == $id) {
+          $descendants[] = $page['id'];
+          $find_descendants($page['id'], $descendants);
         }
-      };
-
-      // find all descendants of the current page
-      $descendants = [];
-      $find_descendants($this->id, $descendants);
-
-      // check if the parent_id is the current page or one of its descendants
-      if (in_array($this->parent_id, $descendants)) {
-        $this->add_error("Parent cannot be a descendant of this page.");
       }
+    };
+
+    // find all descendants of the current page
+    $descendants = [];
+    $find_descendants($this->id, $descendants);
+
+    // check if the parent_id is the current page or one of its descendants
+    if (in_array($this->parent_id, $descendants)) {
+      $this->add_error("Parent cannot be a descendant of this page.");
     }
   }
 
@@ -204,6 +223,16 @@ class Page extends Application_Record
   {
     if ($this->parent_id === '') {
       $this->update_attribute('parent_id', null);
+    }
+  }
+
+  protected function nullify_descendant_parent_id()
+  {
+    $descendants = $this->fetch_by(['parent_id' => $this->id], ['id']);
+    foreach ($descendants as $descendant) {
+      $page = (new Page)->find_by(['id' => $descendant['id']]);
+
+      $page->update_column('parent_id', null);
     }
   }
 }
