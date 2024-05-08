@@ -20,6 +20,7 @@
     <nav>
       <menu>
         <li><a href="<?php $this->url('/dashboard') ?>">Dashboard</a></li>
+        <li><a href="<?php $this->url('/dashboard/posts') ?>">Posts</a></li>
         <li><a href="<?php $this->url('/dashboard/pages') ?>">Pages</a></li>
         <li><a href="<?php $this->url('/logout') ?>">Logout</a></li>
       </menu>

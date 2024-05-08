@@ -83,7 +83,7 @@ class PagesController extends ApplicationController
     list($page, $error_messages) = $page->publish($this->page_params());
 
     if ($error_messages) {
-      $this->redirect('/dashboard/pages', ['errors' => $error_messages]);
+      $this->redirect('/dashboard/pages/new', ['errors' => $error_messages]);
     } else {
       $this->redirect('/dashboard/pages');
     }
@@ -97,7 +97,7 @@ class PagesController extends ApplicationController
       list($current_page, $error_messages) = $current_page->trash();
 
       if ($error_messages) {
-        $this->redirect('/dashboard/pages/new', ['errors' => $error_messages]);
+        $this->redirect("/dashboard/pages/{$current_page->id}/edit", ['errors' => $error_messages]);
       } else {
         $this->redirect('/dashboard/pages');
       }

@@ -30,6 +30,7 @@ return [
     'GET' => 'application@dashboard',
   ],
 
+  // Pages
   '/dashboard/pages' => [
     'GET' => 'pages@index',
     'POST' => 'pages@create',
@@ -45,6 +46,27 @@ return [
   ],
   '/dashboard/pages/:id/delete' => [
     'POST' => 'pages@delete',
+  ],
+
+  // Posts
+  '/dashboard/posts' => [
+    'GET' => 'posts@index',
+    'POST' => 'posts@create',
+  ],
+  '/dashboard/posts/new' => [
+    'GET' => 'posts@new',
+  ],
+  '/dashboard/posts/:id' => [
+    'POST' => 'posts@update',
+  ],
+  '/dashboard/posts/:id/edit' => [
+    'GET' => 'posts@edit',
+  ],
+  '/dashboard/posts/:id/delete' => [
+    'POST' => 'posts@delete',
+  ],
+  '/post/:title' => [
+    'GET' => 'posts@show',
   ],
 
   // keyword "no_match" sets catch-all 

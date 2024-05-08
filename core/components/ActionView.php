@@ -98,7 +98,12 @@ class ActionView extends Base
 
   public function get_object(string $name)
   {
-    return $this->OBJECTS[$name] ?? null;
+    if (isset($this->OBJECTS[$name])) {
+      return $this->OBJECTS[$name];
+    } else {
+      $this->add_error("Object not found: {$name}");
+      $this->handle_errors();
+    }
   }
 
 
