@@ -22,55 +22,55 @@ return [
     'GET' => 'sessions@destroy',
   ],
 
-  '/users' => [
-    'POST' => 'users@create',
-  ],
+  // '/users' => [
+  //   'POST' => 'users@create',
+  // ],
 
   '/dashboard' => [
     'GET' => 'application@dashboard',
   ],
 
   // Pages
-  '/dashboard/pages' => [
-    'GET' => 'pages@index',
-    'POST' => 'pages@create',
-  ],
-  '/dashboard/pages/:id' => [
-    'POST' => 'pages@update',
-  ],
-  '/dashboard/pages/new' => [
-    'GET' => 'pages@new',
-  ],
-  '/dashboard/pages/:id/edit' => [
-    'GET' => 'pages@edit',
-  ],
-  '/dashboard/pages/:id/delete' => [
-    'POST' => 'pages@delete',
-  ],
+  // '/dashboard/pages' => [
+  //   'GET' => 'pages@index',
+  //   'POST' => 'pages@create',
+  // ],
+  // '/dashboard/pages/:id' => [
+  //   'POST' => 'pages@update',
+  // ],
+  // '/dashboard/pages/new' => [
+  //   'GET' => 'pages@new',
+  // ],
+  // '/dashboard/pages/:id/edit' => [
+  //   'GET' => 'pages@edit',
+  // ],
+  // '/dashboard/pages/:id/delete' => [
+  //   'POST' => 'pages@delete',
+  // ],
 
   // Posts
-  '/dashboard/posts' => [
-    'GET' => 'posts@index',
-    'POST' => 'posts@create',
-  ],
-  '/dashboard/posts/new' => [
-    'GET' => 'posts@new',
-  ],
-  '/dashboard/posts/:id' => [
-    'POST' => 'posts@update',
-  ],
-  '/dashboard/posts/:id/edit' => [
-    'GET' => 'posts@edit',
-  ],
-  '/dashboard/posts/:id/delete' => [
-    'POST' => 'posts@delete',
-  ],
-  '/post/:title' => [
-    'GET' => 'posts@show',
-  ],
+  // '/dashboard/posts' => [
+  //   'GET' => 'posts@index',
+  //   'POST' => 'posts@create',
+  // ],
+  // '/dashboard/posts/new' => [
+  //   'GET' => 'posts@new',
+  // ],
+  // '/dashboard/posts/:id' => [
+  //   'POST' => 'posts@update',
+  // ],
+  // '/dashboard/posts/:id/edit' => [
+  //   'GET' => 'posts@edit',
+  // ],
+  // '/dashboard/posts/:id/delete' => [
+  //   'POST' => 'posts@delete',
+  // ],
+  // '/post/:title' => [
+  //   'GET' => 'posts@show',
+  // ],
 
   // keyword "no_match" sets catch-all 
   'no_match' => [
-    'GET' => 'pages@show', // default value 'GET' => 'application@not_found'
+    'GET' => 'application@not_found', // default value 'GET' => 'application@not_found'
   ],
 ];

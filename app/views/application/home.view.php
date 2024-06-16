@@ -1,3 +1,3 @@
-<h1>CMS</h1>
+<h1>MRCLeads</h1>
 
 <p>Default Homepage</p>

@@ -17,8 +17,7 @@ class ApplicationController extends ActionController
 
   public function home()
   {
-    $this->set_layout('page');
-    $this->render();
+    $this->redirect('/dashboard');
   }
 
 
