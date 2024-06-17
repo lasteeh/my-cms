@@ -72,6 +72,8 @@ CREATE TABLE Leads (
     pipeline VARCHAR(255),
     buyer_seller VARCHAR(255),
     agent_assigned VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     PRIMARY KEY (id)
 );

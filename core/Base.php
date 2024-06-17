@@ -25,6 +25,7 @@ class Base
 
   private static $ENV_LOADED = false;
   private static $ERROR_HANDLER_SET = false;
+  private static $GLOBAL_FUNCTIONS_INITIATED = false;
   /****************************************************************************************************/
 
   public function __construct()
@@ -46,6 +47,12 @@ class Base
     if (!self::$ENV_LOADED) {
       self::load_env_file();
       self::$ENV_LOADED = true;
+    }
+
+    // initiate global helper functions
+    if (!self::$GLOBAL_FUNCTIONS_INITIATED) {
+      self::initiate_global_functions();
+      self::$GLOBAL_FUNCTIONS_INITIATED = true;
     }
   }
 
@@ -72,5 +79,10 @@ class Base
         }
       }
     }
+  }
+
+  private static function initiate_global_functions()
+  {
+    require_once self::$ROOT_DIR . self::CORE_DIR . '/functions/global.php';
   }
 }
