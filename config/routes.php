@@ -69,6 +69,19 @@ return [
   //   'GET' => 'posts@show',
   // ],
 
+  // Cities
+  '/dashboard/cities' => [
+    'GET' => 'cities@index',
+  ],
+
+  // Leads
+  '/dashboard/leads' => [
+    'GET' => 'leads@index',
+  ],
+  '/dashboard/leads/batch_add' => [
+    'POST' => 'leads@batch_add',
+  ],
+
   // keyword "no_match" sets catch-all 
   'no_match' => [
     'GET' => 'application@not_found', // default value 'GET' => 'application@not_found'

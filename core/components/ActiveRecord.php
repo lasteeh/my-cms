@@ -54,7 +54,7 @@ class ActiveRecord extends Base
     self::$MODELS_DIRECTORY = self::APP_DIR . '\\' . self::MODELS_DIR;
 
     $model_name =  str_replace(strtolower(self::$MODELS_DIRECTORY . '\\'), '', strtolower(get_class($this)));
-    $this->TABLE = $model_name . 's';
+    $this->TABLE = $this->pluralize($model_name);
     $this->MODEL = ucfirst($model_name);
 
     self::$DB = Database::$PDO;
@@ -88,6 +88,18 @@ class ActiveRecord extends Base
     $this->setup_callback('before_destroy');
     $this->setup_callback('skip_after_destroy');
     $this->setup_callback('after_destroy');
+  }
+
+  private function pluralize(string $word): string
+  {
+    $last_letter = strtolower($word[strlen($word) - 1]);
+
+    if ($last_letter == 'y') {
+      return substr($word, 0, -1) . 'ies';
+    }
+
+    // default rule: just add 's'
+    return $word . 's';
   }
 
   private function setup_callback(string $callback_name)
