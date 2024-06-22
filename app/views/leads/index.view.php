@@ -1,7 +1,24 @@
+<?php
+$errors = $this->get_flash('errors');
+?>
+
+<?php
+if ($errors) {  ?>
+  <ul>
+    <?php
+    foreach ($errors as $error) {
+      echo "<li>{$error}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+?>
+
 <h1>Leads</h1>
 
 <form action="<?php $this->url('/dashboard/leads/batch_add'); ?>" method="post" enctype="multipart/form-data" style="max-width: max-content; margin-inline-start: auto;">
-  <input type="file" name="leads" id="leads" accept=".csv" autocomplete="off" required>
+  <input type="file" name="files[]" id="files" accept=".csv" autocomplete="off" required multiple>
   <button type="submit">Upload</button>
 </form>
 

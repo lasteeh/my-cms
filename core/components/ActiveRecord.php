@@ -295,6 +295,62 @@ class ActiveRecord extends Base
     return true;
   }
 
+  public function insert_all(array $objects, array $options = []): array|false
+  {
+    // check existing columns value in the database
+    $unique_column = $options['unique_by'] ?? null;
+    if (!empty($unique_column)) {
+      $unique_column_values = array_column($objects, $unique_column);
+
+      $placeholders = str_repeat("?,", count($unique_column_values) - 1) . "?";
+      $sql = "SELECT {$unique_column} FROM {$this->TABLE} WHERE {$unique_column} in ({$placeholders})";
+
+      try {
+        $statement = self::$DB->prepare($sql);
+        $statement->execute($unique_column_values);
+        $existing_values = $statement->fetchAll(\PDO::FETCH_COLUMN);
+      } catch (\PDOException $e) {
+        $this->ERRORS[] = $e->getMessage();
+        $this->handle_errors();
+      }
+
+      // filter out existing values from objects list
+      $filtered_data = array_filter($objects, function ($object) use ($unique_column, $existing_values) {
+        return !in_array($object[$unique_column], $existing_values);
+      });
+
+      if (empty($filtered_data)) {
+        return [];
+      }
+
+      // WIP: insert to db and skip duplicate
+      // prepare batch insert
+      // $columns = array_keys($filtered_data[0]);
+      // $placeholders = array_fill(0, count($columns), '?');
+      // $values = [];
+      // foreach ($filtered_data as $data) {
+      //   $values = array_merge($values, array_values($data));
+      // }
+
+      // $sql = sprintf(
+      //   "INSERT INTO {$this->TABLE} (%s) VALUES %s",
+      //   implode(", ", $columns),
+      //   implode(", ", array_fill(0, count($filtered_data), "(" . implode(",", $placeholders) . ")"))
+      // );
+
+      // try {
+      //   $statement = self::$DB->prepare($sql);
+      //   $statement->execute($values);
+
+      //   var_dump($statement->execute($values));
+      //   exit;
+      // } catch (\PDOException $e) {
+      //   $this->ERRORS[] = $e->getMessage();
+      //   $this->handle_errors();
+      // }
+    }
+  }
+
   public function destroy(): bool
   {
     if (!$this->is_an_existing_record()) {

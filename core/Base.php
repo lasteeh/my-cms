@@ -18,6 +18,7 @@ class Base
   protected const VIEWS_DIR = 'views';
   protected const CONFIG_DIR = 'config';
   protected const MIGRATIONS_DIR = 'migrations';
+  protected const STORAGE_DIR = 'storage';
   protected const INDEX_FILE_PATH = 'public/index.php';
 
   protected static $ROOT_URL;

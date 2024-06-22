@@ -1,6 +1,6 @@
 CREATE TABLE Leads (
     id INT AUTO_INCREMENT,
-    vortex_id VARCHAR(255) NOT NULL,
+    vortex_id VARCHAR(255) NOT NULL UNIQUE,
     lead_imported BOOLEAN DEFAULT FALSE,
     listing_status VARCHAR(255) NULL,
     name VARCHAR(255) NULL,
@@ -51,8 +51,8 @@ CREATE TABLE Leads (
     mailing_city VARCHAR(255) NULL,
     mailing_state VARCHAR(255) NULL,
     mailing_zip VARCHAR(20) NULL,
-    list_date DATE NULL,
-    list_price DECIMAL(20, 2) NULL,
+    listing_date DATE NULL,
+    listing_price DECIMAL(20, 2) NULL,
     days_on_market INT NULL,
     lead_date DATE NULL,
     expired_date DATE NULL,
