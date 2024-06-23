@@ -297,58 +297,77 @@ class ActiveRecord extends Base
 
   public function insert_all(array $objects, array $options = []): array|false
   {
-    // check existing columns value in the database
-    $unique_column = $options['unique_by'] ?? null;
-    if (!empty($unique_column)) {
-      $unique_column_values = array_column($objects, $unique_column);
+    if (empty($objects)) {
+      return false;
+    }
 
-      $placeholders = str_repeat("?,", count($unique_column_values) - 1) . "?";
-      $sql = "SELECT {$unique_column} FROM {$this->TABLE} WHERE {$unique_column} in ({$placeholders})";
+    $inserted_rows = []; // the array that we will return later
+
+    // set options
+    $unique_column = $options['unique_by'] ?? null;
+    $batch_size = $options['batch_size'] ?? 100;
+
+    // prepare fields and values for batch insert
+    $fields  = array_keys(reset($objects));
+
+    // split objects into chunks
+    $chunks = array_chunk($objects, $batch_size);
+
+    foreach ($chunks as $chunk) {
+      // prepare values and placeholders for current batch
+
+      $values = [];
+      $placeholders = [];
+
+      // prepare sql parts
+      $insert_sql = "INSERT INTO {$this->TABLE} (" . implode(",", $fields) . ") VALUES ";
+      $update_sql = $unique_column ? " ON DUPLICATE KEY UPDATE " : "";
+
+      if ($unique_column) {
+        foreach ($fields as $field) {
+          if ($field === $unique_column) continue;
+
+          $update_sql .= "{$field} = VALUES({$field}), ";
+        }
+
+        $update_sql = rtrim($update_sql, ", ");
+      }
+
+      foreach ($chunk as $object) {
+        $row = [];
+        foreach ($fields as $field) {
+          $row[] = $object[$field];
+        }
+        $values =  array_merge($values, $row);
+        $placeholders[] = "(" . implode(",", array_fill(0, count($fields), "?")) . ")";
+      }
+
+      $sql = $insert_sql . implode(",", $placeholders) . $update_sql;
 
       try {
         $statement = self::$DB->prepare($sql);
-        $statement->execute($unique_column_values);
-        $existing_values = $statement->fetchAll(\PDO::FETCH_COLUMN);
+
+        foreach ($values as $key => $value) {
+          $statement->bindValue($key + 1, $value);
+        }
+
+        $statement->execute();
+
+        $last_inserted_id = self::$DB->lastInsertId();
+        $affected_rows = $statement->rowCount();
+
+        for ($i = 0; $i < $affected_rows; $i++) {
+          $inserted_rows[] = $last_inserted_id + $i;
+        }
       } catch (\PDOException $e) {
         $this->ERRORS[] = $e->getMessage();
         $this->handle_errors();
       }
-
-      // filter out existing values from objects list
-      $filtered_data = array_filter($objects, function ($object) use ($unique_column, $existing_values) {
-        return !in_array($object[$unique_column], $existing_values);
-      });
-
-      if (empty($filtered_data)) {
-        return [];
-      }
-
-      // WIP: insert to db and skip duplicate
-      // prepare batch insert
-      // $columns = array_keys($filtered_data[0]);
-      // $placeholders = array_fill(0, count($columns), '?');
-      // $values = [];
-      // foreach ($filtered_data as $data) {
-      //   $values = array_merge($values, array_values($data));
-      // }
-
-      // $sql = sprintf(
-      //   "INSERT INTO {$this->TABLE} (%s) VALUES %s",
-      //   implode(", ", $columns),
-      //   implode(", ", array_fill(0, count($filtered_data), "(" . implode(",", $placeholders) . ")"))
-      // );
-
-      // try {
-      //   $statement = self::$DB->prepare($sql);
-      //   $statement->execute($values);
-
-      //   var_dump($statement->execute($values));
-      //   exit;
-      // } catch (\PDOException $e) {
-      //   $this->ERRORS[] = $e->getMessage();
-      //   $this->handle_errors();
-      // }
     }
+
+
+
+    return $inserted_rows;
   }
 
   public function destroy(): bool
@@ -560,8 +579,68 @@ class ActiveRecord extends Base
     return true;
   }
 
+  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $sort_columns = ['id']): array
+  {
+    $results = [];
+    $total_pages = 0;
+
+    // get total number of records
+    $total_records = $this->count();
+
+    // skip second query if no records found
+    if (empty($total_records)) {
+      return [$results, $total_pages];
+    }
+
+    // determine total pages
+    $total_pages = ceil($total_records / $limit);
+
+    // prevent out of bounds page number
+    if ($current_page < 1) {
+      $current_page = 1;
+    } elseif ($current_page > $total_pages) {
+      $current_page = $total_pages;
+    }
+
+    // calculate offset for sql query
+    $offset = ($current_page - 1) * $limit;
+
+
+    $sql = "SELECT * FROM {$this->TABLE} ORDER BY {$sort_by} {$sort_order} LIMIT {$offset}, {$limit}";
+
+    try {
+      $statement = self::$DB->prepare($sql);
+      $statement->execute();
+      $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+    return [$results, $total_pages];
+  }
+
 
   // QUERIES
+
+  public function count(): int
+  {
+    $sql = "SELECT COUNT(*) AS count from {$this->TABLE}";
+
+    $row_count = false;
+
+    try {
+      $statement = self::$DB->prepare($sql);
+      $statement->execute();
+
+      $row_count = $statement->fetchColumn();
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+    return $row_count;
+  }
 
   public function all(): array
   {

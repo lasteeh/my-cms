@@ -130,8 +130,8 @@ class Lead extends Application_Record
   public ?string $mailing_city;
   public ?string $mailing_state;
   public ?string $mailing_zip;
-  public ?string $listing_date;
-  public ?string $listing_price;
+  public ?string $list_date;
+  public ?string $list_price;
   public ?string $days_on_market;
   public ?string $lead_date;
   public ?string $expired_date;
@@ -154,15 +154,15 @@ class Lead extends Application_Record
   public string $created_at;
   public string $updated_at;
 
-  public function get_leads_from_files(array $saved_files): array
+  public function get_leads_from_files(array $saved_files, array $permitted_fields = []): array
   {
     $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\";
-    $leads = []; // list of leads that will be returned later
+    $lead_ids = []; // list of leads that will be returned later
     $error_messages = []; // list of errors that will be returned later
 
     if (empty($saved_files)) {
-      $error_messages[] = "No new leads found.";
-      return [[], $error_messages];
+      $error_messages[] = "No leads found.";
+      return [null, $error_messages];
     }
 
     foreach ($saved_files as $file) {
@@ -185,10 +185,6 @@ class Lead extends Application_Record
         fclose($handle);
         continue;
       }
-
-      $permitted_fields = [
-        'Vortex ID', 'Listing Status', 'Name', 'Name 2', 'Name 3', 'Name 4', 'Name 5', 'Name 6', 'Name 7', 'MLS Name', 'MLS Name 2', 'MLS Name 3', 'MLS Name 4', 'MLS Name 5', 'MLS Name 6', 'MLS Name 7', 'Phone', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5', 'Phone 6', 'Phone 7', 'Phone Status', 'Phone 2 Status', 'Phone 3 Status', 'Phone 4 Status', 'Phone 5 Status', 'Phone 6 Status', 'Phone 7 Status', 'Email', 'Email 2', 'Email 3', 'Email 4', 'Email 5', 'Email 6', 'Email 7', 'Address', 'Address 2', 'Address 3', 'Address 4', 'Address 5', 'Address 6', 'Address 7', 'First Name', 'Last Name', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip', 'Listing Date', 'Listing Price', 'Days On Market', 'Lead Date', 'Expired Date', 'Withdrawn Date', 'Status Date', 'Listing Agent', 'Listing Broker', 'MLS/FSBO ID', 'Property Address', 'Property City', 'Property State', 'Property Zip',
-      ];
 
       $file_leads = []; // list of leads in one file
       while (($data = fgetcsv($handle, 0, ",", "\"", "\\")) !== false) {
@@ -214,16 +210,15 @@ class Lead extends Application_Record
         continue;
       }
 
-      // perform batch insert
-      $inserted_leads = $this->insert_all($file_leads, ['unique_by' => 'vortex_id']);
-      if ($inserted_leads === false) {
+      // perform duplicates filtration and batch insert
+      $inserted_lead_ids = $this->insert_all($file_leads, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
+      if ($inserted_lead_ids === false) {
         $error_messages[] = "Failed to save leads from file: $file_name";
       }
 
-
-      exit;
+      $lead_ids = array_merge($lead_ids, $inserted_lead_ids);
     }
 
-    return [$leads, $error_messages];
+    return [$lead_ids, $error_messages];
   }
 }

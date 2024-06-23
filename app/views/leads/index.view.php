@@ -1,5 +1,10 @@
 <?php
 $errors = $this->get_flash('errors');
+$alerts = $this->get_flash('alerts');
+$current_page = $this->get_object('current_page');
+$total_pages = $this->get_object('total_pages');
+$sort_order = $this->get_object('sort_order');
+$sort_by = $this->get_object('sort_by');
 ?>
 
 <?php
@@ -13,14 +18,43 @@ if ($errors) {  ?>
   </ul>
 <?php
 }
+
+if ($alerts) {  ?>
+  <ul>
+    <?php
+    foreach ($alerts as $alert) {
+      echo "<li>{$alert}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
 ?>
 
 <h1>Leads</h1>
 
 <form action="<?php $this->url('/dashboard/leads/batch_add'); ?>" method="post" enctype="multipart/form-data" style="max-width: max-content; margin-inline-start: auto;">
-  <input type="file" name="files[]" id="files" accept=".csv" autocomplete="off" required multiple>
+  <input type="file" name="leads[]" id="leads" accept=".csv" autocomplete="off" required multiple>
   <button type="submit">Upload</button>
 </form>
+
+<div>
+  <?php if ($current_page > 1) : ?>
+    <a href="?page=<?= $current_page - 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">&laquo; Previous</a>
+  <?php endif; ?>
+
+  <?php for ($i = 1; $i <= $total_pages; $i++) : ?>
+    <?php if ($i == $current_page) : ?>
+      <span><?= $i ?></span>
+    <?php else : ?>
+      <a href="?page=<?= $i ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>"><?= $i ?></a>
+    <?php endif; ?>
+  <?php endfor; ?>
+
+  <?php if ($current_page < $total_pages) : ?>
+    <a href="?page=<?= $current_page + 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">Next &raquo;</a>
+  <?php endif; ?>
+</div>
 
 <div style="width: 100%; min-height: 25dvh; overflow: auto; border: 1px solid gray;">
   <table style="text-align: left; border-spacing: 1em 0.25em;">
@@ -60,7 +94,7 @@ if ($errors) {  ?>
       echo
       "<tr>
         <td>{$lead['vortex_id']}</td>
-        <td>{$lead['import_status']}</td>
+        <td>{$lead['lead_imported']}</td>
         <td>{$lead['listing_status']}</td>
         <td>{$lead['name']}</td>
         <td>{$lead['phone']}</td>
@@ -71,7 +105,7 @@ if ($errors) {  ?>
         <td>{$lead['mailing_city']}</td>
         <td>{$lead['mailing_state']}</td>
         <td>{$lead['mailing_zip']}</td>
-        <td>{$lead['listing_price']}</td>
+        <td>{$lead['list_price']}</td>
         <td>{$lead['status_date']}</td>
         <td>{$lead['mls_fsbo_id']}</td>
         <td>{$lead['absentee_owner']}</td>
@@ -90,4 +124,22 @@ if ($errors) {  ?>
     ?>
 
   </table>
+</div>
+
+<div>
+  <?php if ($current_page > 1) : ?>
+    <a href="?page=<?= $current_page - 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">&laquo; Previous</a>
+  <?php endif; ?>
+
+  <?php for ($i = 1; $i <= $total_pages; $i++) : ?>
+    <?php if ($i == $current_page) : ?>
+      <span><?= $i ?></span>
+    <?php else : ?>
+      <a href="?page=<?= $i ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>"><?= $i ?></a>
+    <?php endif; ?>
+  <?php endfor; ?>
+
+  <?php if ($current_page < $total_pages) : ?>
+    <a href="?page=<?= $current_page + 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">Next &raquo;</a>
+  <?php endif; ?>
 </div>
