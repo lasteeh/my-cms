@@ -50,25 +50,20 @@ class LeadsController extends ApplicationController
 
     if (is_array($leads)) {
       $lead_count = count($leads);
-      $alert_messages = ["{$lead_count} new leads found."];
+      $alert_messages[] = "{$lead_count} new leads found.";
     }
 
     $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
-  private function files_params()
+  public function process()
   {
-    $permitted_fields = [
-      'Vortex ID', 'Listing Status', 'Name', 'Name 2', 'Name 3', 'Name 4', 'Name 5', 'Name 6', 'Name 7', 'MLS Name', 'MLS Name 2', 'MLS Name 3', 'MLS Name 4', 'MLS Name 5', 'MLS Name 6', 'MLS Name 7', 'Phone', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5', 'Phone 6', 'Phone 7', 'Phone Status', 'Phone 2 Status', 'Phone 3 Status', 'Phone 4 Status', 'Phone 5 Status', 'Phone 6 Status', 'Phone 7 Status', 'Email', 'Email 2', 'Email 3', 'Email 4', 'Email 5', 'Email 6', 'Email 7', 'Address', 'Address 2', 'Address 3', 'Address 4', 'Address 5', 'Address 6', 'Address 7', 'First Name', 'Last Name', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip', 'List Date', 'List Price', 'Days On Market', 'Lead Date', 'Expired Date', 'Withdrawn Date', 'Status Date', 'Listing Agent', 'Listing Broker', 'MLS/FSBO ID', 'Property Address', 'Property City', 'Property State', 'Property Zip',
-    ];
-    $required_fields = [
-      'Vortex ID', 'Listing Status', 'Name', 'Phone', 'Email', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip',  'List Price', 'Status Date', 'Property Address', 'Property City', 'Property State', 'Property Zip',
-    ];
-    $files = $this->params_permit(['leads'], $_FILES);
+    $error_messages = [];
+    $alert_messages = [];
+    (new Lead)->process_leads();
 
-    return ['files' => $files, 'permitted_fields' => $permitted_fields, 'required_fields' => $required_fields];
+    $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
-
 
   private function save_files(array $files_params): array
   {
@@ -77,7 +72,7 @@ class LeadsController extends ApplicationController
     $required_fields = $files_params['required_fields'] ?? [];
 
     // check directory existence
-    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\processed\\";
+    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\raw\\";
     if (!is_dir($directory)) {
       $dir_permissions = 0755;
       $recursive = true;
@@ -116,7 +111,7 @@ class LeadsController extends ApplicationController
       $date = new DateTime(); // system's default timezone
       $formatted_date = $date->format('Y-m-d_Hisu');
       $trimmed_file_name = str_replace(".csv", "", $file_name);
-      $file_destination = $directory . $formatted_date . "_leads-processed(" . $trimmed_file_name . ").csv";
+      $file_destination = $directory . $formatted_date . "_leads-raw (" . $trimmed_file_name . ").csv";
 
       // write content to file
       if (!(file_put_contents($file_destination, $file_content))) {
@@ -128,5 +123,18 @@ class LeadsController extends ApplicationController
     }
 
     return [$saved_files, $error_messages];
+  }
+
+  private function files_params()
+  {
+    $permitted_fields = [
+      'Vortex ID', 'Listing Status', 'Name', 'Name 2', 'Name 3', 'Name 4', 'Name 5', 'Name 6', 'Name 7', 'MLS Name', 'MLS Name 2', 'MLS Name 3', 'MLS Name 4', 'MLS Name 5', 'MLS Name 6', 'MLS Name 7', 'Phone', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5', 'Phone 6', 'Phone 7', 'Phone Status', 'Phone 2 Status', 'Phone 3 Status', 'Phone 4 Status', 'Phone 5 Status', 'Phone 6 Status', 'Phone 7 Status', 'Email', 'Email 2', 'Email 3', 'Email 4', 'Email 5', 'Email 6', 'Email 7', 'Address', 'Address 2', 'Address 3', 'Address 4', 'Address 5', 'Address 6', 'Address 7', 'First Name', 'Last Name', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip', 'List Date', 'List Price', 'Days On Market', 'Lead Date', 'Expired Date', 'Withdrawn Date', 'Status Date', 'Listing Agent', 'Listing Broker', 'MLS/FSBO ID', 'Property Address', 'Property City', 'Property State', 'Property Zip',
+    ];
+    $required_fields = [
+      'Vortex ID', 'Listing Status', 'Name', 'Phone', 'Email', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip',  'List Price', 'Status Date', 'Property Address', 'Property City', 'Property State', 'Property Zip',
+    ];
+    $files = $this->params_permit(['leads'], $_FILES);
+
+    return ['files' => $files, 'permitted_fields' => $permitted_fields, 'required_fields' => $required_fields];
   }
 }

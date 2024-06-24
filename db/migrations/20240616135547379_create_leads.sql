@@ -2,6 +2,7 @@ CREATE TABLE Leads (
     id INT AUTO_INCREMENT,
     vortex_id VARCHAR(255) NOT NULL UNIQUE,
     lead_imported BOOLEAN DEFAULT FALSE,
+    lead_processed BOOLEAN DEFAULT FALSE,
     listing_status VARCHAR(255) NULL,
     name VARCHAR(255) NULL,
     name_2 VARCHAR(255) NULL,

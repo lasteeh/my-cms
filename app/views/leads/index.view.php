@@ -38,6 +38,10 @@ if ($alerts) {  ?>
   <button type="submit">Upload</button>
 </form>
 
+<div style="display: flex; flex-flow: row wrap; justify-content: flex-end;">
+  <a href="<?php $this->url('/dashboard/leads/process'); ?>">Process Leads</a>
+</div>
+
 <div>
   <?php if ($current_page > 1) : ?>
     <a href="?page=<?= $current_page - 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">&laquo; Previous</a>
@@ -56,7 +60,7 @@ if ($alerts) {  ?>
   <?php endif; ?>
 </div>
 
-<div style="width: 100%; min-height: 25dvh; overflow: auto; border: 1px solid gray;">
+<div style="width: 100%; min-height: 25dvh; max-height: calc(75dvh - 2rem); overflow: auto; border: 1px solid gray;">
   <table style="text-align: left; border-spacing: 1em 0.25em;">
     <tr>
       <th>Vortex ID</th>
@@ -91,35 +95,64 @@ if ($alerts) {  ?>
     $leads = $this->get_object('leads');
 
     foreach ($leads as $lead) {
-      echo
-      "<tr>
-        <td>{$lead['vortex_id']}</td>
-        <td>{$lead['lead_imported']}</td>
-        <td>{$lead['listing_status']}</td>
-        <td>{$lead['name']}</td>
-        <td>{$lead['phone']}</td>
-        <td>{$lead['phone_2']}</td>
-        <td>{$lead['phone_3']}</td>
-        <td>{$lead['email']}</td>
-        <td>{$lead['mailing_street']}</td>
-        <td>{$lead['mailing_city']}</td>
-        <td>{$lead['mailing_state']}</td>
-        <td>{$lead['mailing_zip']}</td>
-        <td>{$lead['list_price']}</td>
-        <td>{$lead['status_date']}</td>
-        <td>{$lead['mls_fsbo_id']}</td>
-        <td>{$lead['absentee_owner']}</td>
-        <td>{$lead['property_address']}</td>
-        <td>{$lead['property_city']}</td>
-        <td>{$lead['property_state']}</td>
-        <td>{$lead['property_zip']}</td>
-        <td>{$lead['property_county']}</td>
-        <td>{$lead['assigned_area']}</td>
-        <td>{$lead['source']}</td>
-        <td>{$lead['pipeline']}</td>
-        <td>{$lead['buyer_seller']}</td>
-        <td>{$lead['agent_assigned']}</td>
-      </tr>";
+      $vortex_id = $lead['vortex_id'];
+      $lead_imported = $lead['lead_imported'] === 1 ? 'Do Not Import' : 'Import';
+      $listing_status = $lead['listing_status'];
+      $name = $lead['name'];
+      $phone = $lead['phone'];
+      $phone_2 = $lead['phone_2'];
+      $phone_3 = $lead['phone_3'];
+      $email = $lead['email'];
+      $mailing_street = $lead['mailing_street'];
+      $mailing_city = $lead['mailing_city'];
+      $mailing_state = $lead['mailing_state'];
+      $mailing_zip = $lead['mailing_zip'];
+      $list_price = $lead['list_price'];
+      $status_date = $lead['status_date'];
+      $mls_fsbo_id = $lead['mls_fsbo_id'];
+      $absentee_owner = $lead['absentee_owner'];
+      $property_address = $lead['property_address'];
+      $property_city = $lead['property_city'];
+      $property_state = $lead['property_state'];
+      $property_zip = $lead['property_zip'];
+      $property_county = $lead['property_county'];
+      $assigned_area = $lead['assigned_area'];
+      $source = $lead['source'];
+      $pipeline = $lead['pipeline'];
+      $buyer_seller = $lead['buyer_seller'];
+      $agent_assigned = $lead['agent_assigned'];
+
+      $row = <<<HTML
+        <tr>
+          <td>$vortex_id</td>
+          <td>$lead_imported</td>
+          <td>$listing_status</td>
+          <td>$name</td>
+          <td>$phone</td>
+          <td>$phone_2</td>
+          <td>$phone_3</td>
+          <td>$email</td>
+          <td>$mailing_street</td>
+          <td>$mailing_city</td>
+          <td>$mailing_state</td>
+          <td>$mailing_zip</td>
+          <td>$list_price</td>
+          <td>$status_date</td>
+          <td>$mls_fsbo_id</td>
+          <td>$absentee_owner</td>
+          <td>$property_address</td>
+          <td>$property_city</td>
+          <td>$property_state</td>
+          <td>$property_zip</td>
+          <td>$property_county</td>
+          <td>$assigned_area</td>
+          <td>$source</td>
+          <td>$pipeline</td>
+          <td>$buyer_seller</td>
+          <td>$agent_assigned</td>
+        </tr>
+      HTML;
+      echo $row;
     }
     ?>
 
