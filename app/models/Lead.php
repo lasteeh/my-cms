@@ -8,6 +8,8 @@ class Lead extends Application_Record
 {
   public string $vortex_id;
   public bool $lead_imported;
+  public bool $lead_assigned;
+  public bool $lead_processed;
   public ?string $listing_status;
   public ?string $name;
   public ?string $name_2;
@@ -67,7 +69,9 @@ class Lead extends Application_Record
   public ?string $listing_agent;
   public ?string $listing_broker;
   public ?string $mls_fsbo_id;
+  public ?string $standardized_mailing_street;
   public bool $absentee_owner;
+  public ?string $standardized_property_street;
   public ?string $property_address;
   public ?string $property_city;
   public ?string $property_state;
@@ -149,13 +153,101 @@ class Lead extends Application_Record
     return [$lead_ids, $error_messages];
   }
 
-  public function process_leads()
+  public function assign_leads(): array
   {
-    $unprocessed_leads = $this->fetch_by(['lead_processed' => false]);
+    $unassigned_leads = $this->fetch_by(['lead_assigned' => false], ['id', 'vortex_id', 'property_city', 'property_county', 'assigned_area', 'mailing_street', 'absentee_owner', 'property_address']);
+    $all_cities = (new City)->fetch_by([], ['id', 'name', 'county_id']);
 
+    $city_to_county = [];
+    foreach ($all_cities as $city) {
+      $city_name = strtolower($city['name']);
+      $city_to_county[$city_name] = $city['county_id'];
+    }
+
+    $county_to_area = config('mrcleads.assigned_areas') ?? [];
+    $street_suffix_lookup = config('mrcleads.street_suffix_lookup') ?? [];
+
+    $leads_to_be_assigned = [];
+    $error_messages = [];
+
+    // process each lead
+    foreach ($unassigned_leads as $lead) {
+
+      // === process property_county and assigned_area ===
+      $lead_city = isset($lead['property_city']) ? strtolower($lead['property_city']) : '';
+
+      // if found in cities list, process 
+      if (isset($city_to_county[$lead_city])) {
+
+        // fetch the matched county info
+        $county_id = $city_to_county[$lead_city];
+        $county = (new County)->find_by(['id' => $county_id], ['id', 'name']);
+        $county_name = strtolower($county->name);
+
+        // look up assigned areas if theres a match
+        $assigned_area = null;
+        foreach ($county_to_area as $area => $counties) {
+          if (!in_array($county_name, $counties)) continue;
+
+          $assigned_area = $area;
+          break;
+        }
+
+        // assign property_county and assigned_area values to lead 
+        $lead['property_county'] = $county_id;
+        $lead['assigned_area'] = $assigned_area;
+      }
+
+
+      // === process absentee owner ===
+
+      // standardize mailing street first
+      $mailing_street  = $lead['mailing_street'] ?? '';
+      $standardized_mailing_street = $this->standardize_street_address($mailing_street, $street_suffix_lookup);
+
+      // standardize property address next
+      $property_street = $lead['property_address'] ?? '';
+      $standardized_property_street = $this->standardize_street_address($property_street, $street_suffix_lookup);
+
+      // assign standardized_mailing_street and standardized_property_street
+      $lead['standardized_mailing_street'] = $standardized_mailing_street;
+      $lead['standardized_property_street'] = $standardized_property_street;
+
+      // compare and determine absentee ownership
+      if ($standardized_mailing_street !== $standardized_property_street) {
+        $lead['absentee_owner'] = true;
+      }
+
+
+      // === process source, pipeline, buyer/seller, agent assigned ===
+
+      // determine source if REDX or Absentee Owner
+      $absentee_owner = isset($lead['absentee_owner']) ? (bool) $lead['absentee_owner'] : false;
+      $lead['source'] = $absentee_owner ? 'Absentee Owner' : 'REDX';
+
+      // set pipeline, buyer/seller, and agent assigned
+      $lead['pipeline'] = 'New Lead';
+      $lead['buyer_seller'] = 'Seller';
+      $lead['agent_assigned'] = 'Jessica Knight';
+
+      // check if assigning is complete
+
+      $county_checked = isset($lead['property_county']) && !empty($lead['property_county']);
+      $source_checked = isset($lead['source']) && !empty($lead['source']);
+      $pipeline_checked = isset($lead['pipeline']) && !empty($lead['pipeline']);
+      $buyer_seller_checked = isset($lead['buyer_seller']) && !empty($lead['buyer_seller']);
+      $agent_assigned_checked = isset($lead['agent_assigned']) && !empty($lead['agent_assigned']);
+
+      if ($county_checked && $source_checked && $pipeline_checked & $buyer_seller_checked && $agent_assigned_checked) {
+        $lead['lead_assigned'] = true;
+      }
+
+      // inlcude lead to be assigned
+      $leads_to_be_assigned[] = $lead;
+    }
 
     /* 
-    TODO: change property_county to a foreign key referencing county_id in counties table
+    TODO: change property_county to a foreign key referencing county_id in counties table - done
 
     steps
 
@@ -164,21 +256,52 @@ class Lead extends Application_Record
     2. fetch all cities
     3. return only id, vortex_id, property_city, mailing_street, property_street
 
-    - process property_county and assigned_area
+    - process property_county and assigned_area - done
     4. compare property_city if available in cities list
     5. update property_county based on the city's county by fetching the county id from the city or null if not found in cities list
     6. update assigned_area based on config(mrcleads.assigned_areas) from 
 
-    - process absentee_owner
+    - process absentee_owner - done
 
-    - process source, pipeline, buyer_seller, agent_assigned
+    - process source, pipeline, buyer_seller, agent_assigned - done
 
-    last step
-    change lead_processed = true if property_county, assigned_area, source, pipeline, buyer_seller, agent_assigned are not null
+    last step - done
+    change lead_assigned = true if property_county, source, pipeline, buyer_seller, agent_assigned are not null
 
     */
 
-    var_dump($unprocessed_leads);
-    exit;
+    // now write changes to db
+
+    $assigned_leads = $this->update_all($leads_to_be_assigned, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
+    if ($assigned_leads === false) {
+      $error_messages[] = "Failed to assign leads";
+    }
+
+
+    return [$assigned_leads, $error_messages];
+  }
+
+  private function standardize_street_address(string $address, array $suffix_lookup): null|string
+  {
+    if (empty($address)) return null;
+
+    $address = trim(str_replace("#", "", $address));
+    if (empty($address)) return null;
+
+    $address = strtoupper($address);
+
+    $address_parts = explode(" ", $address);
+
+    $standardized_address = "";
+
+    foreach ($address_parts as $part) {
+      if (!array_key_exists($part, $suffix_lookup)) {
+        $standardized_address .= $part . " ";
+      } else {
+        $standardized_address .= $suffix_lookup[$part] . " ";
+      }
+    }
+
+    return trim($standardized_address);
   }
 }

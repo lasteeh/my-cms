@@ -56,11 +56,18 @@ class LeadsController extends ApplicationController
     $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
-  public function process()
+  public function assign()
   {
     $error_messages = [];
     $alert_messages = [];
-    (new Lead)->process_leads();
+
+    list($assigned_leads, $errors) = (new Lead)->assign_leads();
+    $error_messages = array_merge($error_messages, $errors);
+
+    if (is_array($assigned_leads)) {
+      $lead_count = count($assigned_leads);
+      $alert_messages[] = "{$lead_count} leads assigned.";
+    }
 
     $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }

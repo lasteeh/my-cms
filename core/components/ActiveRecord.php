@@ -370,6 +370,30 @@ class ActiveRecord extends Base
     return $inserted_rows;
   }
 
+  public function update_all(array $objects, array $options = []): array|false
+  {
+    if (empty($objects)) {
+      return false;
+    }
+
+    $updated_rows = []; // array to be returned later
+
+    // set options
+    $unique_column = $options['unique_by'] ?? null;
+    $batch_size = $options['batch_size'] ?? 100;
+
+    // TODO: implement UPDATE SQL HERE
+
+    try {
+      // ... 
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+
+    return $updated_rows;
+  }
+
   public function destroy(): bool
   {
     if (!$this->is_an_existing_record()) {

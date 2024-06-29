@@ -2,6 +2,7 @@ CREATE TABLE Leads (
     id INT AUTO_INCREMENT,
     vortex_id VARCHAR(255) NOT NULL UNIQUE,
     lead_imported BOOLEAN DEFAULT FALSE,
+    lead_assigned BOOLEAN DEFAULT FALSE,
     lead_processed BOOLEAN DEFAULT FALSE,
     listing_status VARCHAR(255) NULL,
     name VARCHAR(255) NULL,
@@ -62,12 +63,14 @@ CREATE TABLE Leads (
     listing_agent VARCHAR(255) NULL,
     listing_broker VARCHAR(255) NULL,
     mls_fsbo_id VARCHAR(255) NULL,
+    standardized_mailing_street VARCHAR(255) NULL,
     absentee_owner BOOLEAN DEFAULT FALSE,
+    standardized_property_street VARCHAR(255) NULL,
     property_address VARCHAR(255) NULL,
     property_city VARCHAR(255) NULL,
     property_state VARCHAR(255) NULL,
     property_zip VARCHAR(20) NULL,
-    property_county VARCHAR(255) NULL,
+    property_county INT NULL,
     assigned_area VARCHAR(255) NULL,
     source VARCHAR(255) NULL,
     pipeline VARCHAR(255) NULL,
@@ -76,5 +79,6 @@ CREATE TABLE Leads (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    FOREIGN KEY (property_county) REFERENCES Counties(id)
 );

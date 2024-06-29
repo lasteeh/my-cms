@@ -39,7 +39,7 @@ if ($alerts) {  ?>
 </form>
 
 <div style="display: flex; flex-flow: row wrap; justify-content: flex-end;">
-  <a href="<?php $this->url('/dashboard/leads/process'); ?>">Process Leads</a>
+  <a href="<?php $this->url('/dashboard/leads/assign'); ?>">Assign Leads</a>
 </div>
 
 <div>
@@ -59,10 +59,16 @@ if ($alerts) {  ?>
     <a href="?page=<?= $current_page + 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">Next &raquo;</a>
   <?php endif; ?>
 </div>
-
-<div style="width: 100%; min-height: 25dvh; max-height: calc(75dvh - 2rem); overflow: auto; border: 1px solid gray;">
-  <table style="text-align: left; border-spacing: 1em 0.25em;">
-    <tr>
+<style>
+  table :where(th,
+    td) {
+    padding: 0.5em 0.75em;
+    border: 1px solid darkgray;
+  }
+</style>
+<div style="width: 100%; min-height: 25dvh; max-height: calc(75dvh - 2em); overflow: auto; border: 1px solid gray;">
+  <table style="position: relative; text-align: left; border-spacing: 0;">
+    <tr style="position: sticky; top: 0; background-color: lightgray;">
       <th>Vortex ID</th>
       <th>Import Status</th>
       <th>Listing Status</th>
@@ -78,7 +84,9 @@ if ($alerts) {  ?>
       <th>List Price</th>
       <th>Register Date</th>
       <th>MLS/FSBO ID</th>
+      <th>Standardized Mailing Street</th>
       <th>Absentee Owner</th>
+      <th>Standardized Property Street</th>
       <th>Property Address</th>
       <th>Property City</th>
       <th>Property State</th>
@@ -110,7 +118,9 @@ if ($alerts) {  ?>
       $list_price = $lead['list_price'];
       $status_date = $lead['status_date'];
       $mls_fsbo_id = $lead['mls_fsbo_id'];
+      $standardized_mailing_street = $lead['standardized_mailing_street'];
       $absentee_owner = $lead['absentee_owner'];
+      $standardized_property_street = $lead['standardized_property_street'];
       $property_address = $lead['property_address'];
       $property_city = $lead['property_city'];
       $property_state = $lead['property_state'];
@@ -139,7 +149,9 @@ if ($alerts) {  ?>
           <td>$list_price</td>
           <td>$status_date</td>
           <td>$mls_fsbo_id</td>
+          <td>$standardized_mailing_street</td>
           <td>$absentee_owner</td>
+          <td>$standardized_property_street</td>
           <td>$property_address</td>
           <td>$property_city</td>
           <td>$property_state</td>

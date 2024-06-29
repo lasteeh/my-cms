@@ -81,8 +81,8 @@ return [
   '/dashboard/leads/batch_add' => [
     'POST' => 'leads@batch_add',
   ],
-  '/dashboard/leads/process' => [
-    'GET' => 'leads@process',
+  '/dashboard/leads/assign' => [
+    'GET' => 'leads@assign',
   ],
 
   // keyword "no_match" sets catch-all 
