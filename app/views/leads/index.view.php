@@ -104,7 +104,7 @@ if ($alerts) {  ?>
 
     foreach ($leads as $lead) {
       $vortex_id = $lead['vortex_id'];
-      $lead_imported = $lead['lead_imported'] === 1 ? 'Do Not Import' : 'Import';
+      $lead_imported = $lead['lead_imported'];
       $listing_status = $lead['listing_status'];
       $name = $lead['name'];
       $phone = $lead['phone'];
@@ -132,8 +132,25 @@ if ($alerts) {  ?>
       $buyer_seller = $lead['buyer_seller'];
       $agent_assigned = $lead['agent_assigned'];
 
+      $warning_color = "darkred";
+      $ignore_color = "lightgray";
+
+      $missing_county_info = $lead['property_county'] === "MISSING COUNTY INFO" ? true : false;
+      $area_not_assigned = $lead['assigned_area'] === "IGNORE ROW" ? true : false;
+
+      $background_color = "transparent";
+      $color = "black";
+      if ($area_not_assigned) {
+        $background_color = $ignore_color;
+        $color = "darkgray";
+      }
+      if ($missing_county_info) {
+        $background_color = $warning_color;
+        $color = "white";
+      }
+
       $row = <<<HTML
-        <tr>
+        <tr style="background-color: $background_color; color: $color;">
           <td>$vortex_id</td>
           <td>$lead_imported</td>
           <td>$listing_status</td>

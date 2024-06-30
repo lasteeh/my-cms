@@ -8,13 +8,10 @@ use DateTime;
 
 class LeadsController extends ApplicationController
 {
-  const LEADS_PER_PAGE = 100;
-
   public function index()
   {
-    $leads_per_index_page = isset($_GET['leads_per_page']) && is_int((int)($_GET['leads_per_page'])) ? $_GET['leads_per_page'] : self::LEADS_PER_PAGE; // customize page's maximum lead count
+    $leads_per_index_page = isset($_GET['leads_per_page']) && is_int((int)($_GET['leads_per_page'])) ? $_GET['leads_per_page'] : 100; // customize page's maximum lead count
     $default_sort_by = 'id';
-    $params = $this->files_params();
 
     // determin current page number
     $current_page = (int)($_GET['page'] ?? 1);
@@ -24,7 +21,7 @@ class LeadsController extends ApplicationController
     $sort_order = (isset($_GET['sort_order']) && (strtolower($_GET['sort_order']) === 'asc')) ? 'asc' : 'desc';
 
     // fetch leads for current page
-    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by, $params['permitted_fields']);
+    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_index_page, $sort_order, $sort_by);
 
     $this->set_object('leads', $leads);
     $this->set_object('current_page', $current_page);
@@ -65,9 +62,10 @@ class LeadsController extends ApplicationController
     $error_messages = array_merge($error_messages, $errors);
 
     if (is_array($assigned_leads)) {
-      $lead_count = count($assigned_leads);
-      $alert_messages[] = "{$lead_count} leads assigned.";
+      $assigned_leads_count = count($assigned_leads);
+      $alert_messages[] = "{$assigned_leads_count} leads assigned.";
     }
+
 
     $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }

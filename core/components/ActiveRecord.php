@@ -376,19 +376,66 @@ class ActiveRecord extends Base
       return false;
     }
 
-    $updated_rows = []; // array to be returned later
-
     // set options
-    $unique_column = $options['unique_by'] ?? null;
+    $unique_column = $options['unique_by'] ?? 'id';
     $batch_size = $options['batch_size'] ?? 100;
 
-    // TODO: implement UPDATE SQL HERE
+    $updated_rows = []; // array to be returned later
 
-    try {
-      // ... 
-    } catch (\PDOException $e) {
-      $this->ERRORS[] = $e->getMessage();
-      $this->handle_errors();
+    // prepare fields
+    $fields = array_keys(reset($objects));
+
+    // split objects into chunks
+    $chunks = array_chunk($objects, $batch_size);
+
+    // prepare placeholders for each batch
+    foreach ($chunks as $chunk) {
+
+      $cases = [];
+      $params = [];
+      $ids = [];
+
+      foreach ($fields as $field) {
+        if ($field === $unique_column) continue;
+
+        $cases[$field] = "{$field} = CASE";
+
+        foreach ($chunk as $object) {
+          $id = $object[$unique_column];
+
+          $cases[$field] .= " WHEN {$unique_column} = :{$unique_column}_{$id} THEN :{$field}_{$id}";
+          $params[":{$unique_column}_{$id}"] = $id;
+          $params[":{$field}_{$id}"] = $object[$field];
+
+          if (!in_array($id, $ids)) {
+            $ids[] = $id;
+          }
+        }
+
+        $cases[$field] .= " ELSE {$field} END";
+      }
+
+      $case_sql = implode(", ", $cases);
+      $id_placeholders = implode(",", array_map(fn ($id) => ":{$unique_column}_{$id}", $ids));
+
+      $sql = "UPDATE {$this->TABLE} SET {$case_sql} WHERE {$unique_column} in ({$id_placeholders})";
+
+      try {
+
+        $statement = self::$DB->prepare($sql);
+
+        // bind params
+        foreach ($params as $key => $value) {
+          $statement->bindValue($key, $value);
+        }
+
+        $statement->execute();
+
+        $updated_rows = array_merge($updated_rows, $ids);
+      } catch (\PDOException $e) {
+        $this->ERRORS[] = $e->getMessage();
+        $this->handle_errors();
+      }
     }
 
     return $updated_rows;
@@ -603,7 +650,7 @@ class ActiveRecord extends Base
     return true;
   }
 
-  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $sort_columns = ['id']): array
+  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $returning = []): array
   {
     $results = [];
     $total_pages = 0;
@@ -629,8 +676,9 @@ class ActiveRecord extends Base
     // calculate offset for sql query
     $offset = ($current_page - 1) * $limit;
 
+    $select_clause = QueryBuilder::build_select_clause($returning, $this);
 
-    $sql = "SELECT * FROM {$this->TABLE} ORDER BY {$sort_by} {$sort_order} LIMIT {$offset}, {$limit}";
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} ORDER BY {$sort_by} {$sort_order} LIMIT {$offset}, {$limit}";
 
     try {
       $statement = self::$DB->prepare($sql);
@@ -685,9 +733,9 @@ class ActiveRecord extends Base
       $this->handle_errors();
     }
 
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
+    [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
     try {
-      $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
-      [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
 
       $statement = self::$DB->prepare($sql);
       foreach ($placeholders as $placeholder => $value) {
@@ -711,9 +759,9 @@ class ActiveRecord extends Base
       $this->handle_errors();
     }
 
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
+    [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
     try {
-      $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
-      [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
 
       $statement = self::$DB->prepare($sql);
       foreach ($placeholders as $placeholder => $value) {
@@ -724,6 +772,40 @@ class ActiveRecord extends Base
       $result = $statement->fetch(\PDO::FETCH_ASSOC);
 
       return $result ? $this->exist($result) : null;
+    } catch (\PDOException $e) {
+      $this->ERRORS[] = $e->getMessage();
+      $this->handle_errors();
+    }
+  }
+
+  public function check_column_value(array $objects, array $conditions, array $options = []): array
+  {
+    if (empty($objects)) return [];
+
+    // set options
+    $unique_by = $options['unique_by'] ?? 'id';
+    $returning = $options['returning'] ?? [];
+
+    $select_clause = QueryBuilder::build_select_clause($returning, $this);
+
+    if (empty($select_clause)) {
+      $this->ERRORS[] = "No valid columns.";
+      $this->handle_errors();
+    }
+
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
+    [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
+    [$sql, $placeholders] = QueryBuilder::build_in_clause($sql, $placeholders, $unique_by, $objects);
+
+    try {
+
+      $statement = self::$DB->prepare($sql);
+      foreach ($placeholders as $placeholder => $value) {
+        $statement->bindValue($placeholder, $value);
+      }
+
+      $statement->execute();
+      return $statement->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
       $this->ERRORS[] = $e->getMessage();
       $this->handle_errors();

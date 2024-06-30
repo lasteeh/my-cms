@@ -85,6 +85,49 @@ class Lead extends Application_Record
   public string $created_at;
   public string $updated_at;
 
+  public function paginate_leads(int $current_page, int $leads_per_index_page, string $sort_order, string $sort_by): array
+  {
+    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by);
+    $all_counties = (new County)->fetch_by([], ['id', 'name']);
+
+    // create a county id-name map
+    $county_map = [];
+    foreach ($all_counties as $county) {
+      $county_map[$county['id']] = $county['name'];
+    }
+    $county_map['N/A'] = "MISSING COUNTY INFO";
+
+    $processed_leads = [];
+    // process leads additional column here
+    foreach ($leads as $lead) {
+      $is_county_info_available = !empty($lead['property_county']) ? true : false;
+
+      // lead_imported
+      $lead['lead_imported'] = $lead['lead_imported'] ? "Do Not Import" : "Import";
+
+      // property_county
+      $county_id = $lead['property_county'] ?? 'N/A';
+      $lead['property_county'] = $county_map[$county_id];
+
+
+      // assigned_area
+      if ($is_county_info_available) {
+        if (isset($lead['assigned_area']) && !empty($lead['assigned_area'])) {
+          $lead['assigned_area'] = ucfirst($lead['assigned_area']);
+        } else {
+          $lead['assigned_area'] = "IGNORE ROW";
+        }
+      } else {
+        $lead['assigned_area'] = "MISSING COUNTY INFO";
+      }
+
+      // add to processed leads
+      $processed_leads[] = $lead;
+    }
+
+    return [$processed_leads, $total_pages];
+  }
+
   public function get_leads_from_files(array $saved_files, array $permitted_fields = []): array
   {
     $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\";
@@ -155,7 +198,7 @@ class Lead extends Application_Record
 
   public function assign_leads(): array
   {
-    $unassigned_leads = $this->fetch_by(['lead_assigned' => false], ['id', 'vortex_id', 'property_city', 'property_county', 'assigned_area', 'mailing_street', 'absentee_owner', 'property_address']);
+    $unassigned_leads = $this->fetch_by(['lead_assigned' => false], ['id', 'vortex_id', 'lead_assigned', 'property_city', 'property_county', 'assigned_area', 'mailing_street', 'absentee_owner', 'property_address', 'standardized_mailing_street', 'standardized_property_street', 'source', 'pipeline', 'buyer_seller', 'agent_assigned']);
     $all_cities = (new City)->fetch_by([], ['id', 'name', 'county_id']);
 
     $city_to_county = [];
@@ -167,7 +210,7 @@ class Lead extends Application_Record
     $county_to_area = config('mrcleads.assigned_areas') ?? [];
     $street_suffix_lookup = config('mrcleads.street_suffix_lookup') ?? [];
 
-    $leads_to_be_assigned = [];
+    $leads_to_be_updated = [];
     $error_messages = [];
 
     // process each lead
@@ -243,40 +286,17 @@ class Lead extends Application_Record
       }
 
       // inlcude lead to be assigned
-      $leads_to_be_assigned[] = $lead;
+      $leads_to_be_updated[] = $lead;
     }
 
-    /* 
-    TODO: change property_county to a foreign key referencing county_id in counties table - done
+    $updated_leads = $this->update_all($leads_to_be_updated, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
 
-    steps
-
-    - prep
-    1. fetch all unprocessed leads with lead_processed = false
-    2. fetch all cities
-    3. return only id, vortex_id, property_city, mailing_street, property_street
-
-    - process property_county and assigned_area - done
-    4. compare property_city if available in cities list
-    5. update property_county based on the city's county by fetching the county id from the city or null if not found in cities list
-    6. update assigned_area based on config(mrcleads.assigned_areas) from 
-
-    - process absentee_owner - done
-
-    - process source, pipeline, buyer_seller, agent_assigned - done
-
-    last step - done
-    change lead_assigned = true if property_county, source, pipeline, buyer_seller, agent_assigned are not null
-
-    */
-
-    // now write changes to db
-
-    $assigned_leads = $this->update_all($leads_to_be_assigned, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
-    if ($assigned_leads === false) {
+    if ($updated_leads === false) {
       $error_messages[] = "Failed to assign leads";
+      return [null, $error_messages];
     }
 
+    $assigned_leads = $this->check_column_value($updated_leads, ['lead_assigned' => true], ['unique_by' => 'vortex_id', 'returning' => ['vortex_id']]);
 
     return [$assigned_leads, $error_messages];
   }

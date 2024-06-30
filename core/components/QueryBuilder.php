@@ -42,4 +42,20 @@ class QueryBuilder
 
     return [rtrim($sql, " AND "), $placeholders];
   }
+
+  public static function build_in_clause(string $sql, array $placeholders, string $column, array $values): array
+  {
+    $in_placeholders = [];
+
+    foreach ($values as $index => $value) {
+      $placeholder = ":{$column}_{$value}";
+      $in_placeholders[] = $placeholder;
+      $placeholders[$placeholder] = $value;
+    }
+
+    $in_clause = implode(",", $in_placeholders);
+    $sql .= " AND {$column} IN ({$in_clause})";
+
+    return [$sql, $placeholders];
+  }
 }
