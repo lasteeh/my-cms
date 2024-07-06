@@ -85,9 +85,9 @@ class Lead extends Application_Record
   public string $created_at;
   public string $updated_at;
 
-  public function paginate_leads(int $current_page, int $leads_per_index_page, string $sort_order, string $sort_by): array
+  public function paginate_leads(int $current_page, int $leads_per_index_page, string $sort_order, string $sort_by, array $filters): array
   {
-    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by);
+    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by, [], $filters);
     $all_counties = (new County)->fetch_by([], ['id', 'name']);
 
     // create a county id-name map
@@ -97,7 +97,7 @@ class Lead extends Application_Record
     }
     $county_map['N/A'] = "MISSING COUNTY INFO";
 
-    $processed_leads = [];
+    $leads_to_show = [];
     // process leads additional column here
     foreach ($leads as $lead) {
       $is_county_info_available = !empty($lead['property_county']) ? true : false;
@@ -108,7 +108,6 @@ class Lead extends Application_Record
       // property_county
       $county_id = $lead['property_county'] ?? 'N/A';
       $lead['property_county'] = $county_map[$county_id];
-
 
       // assigned_area
       if ($is_county_info_available) {
@@ -122,10 +121,10 @@ class Lead extends Application_Record
       }
 
       // add to processed leads
-      $processed_leads[] = $lead;
+      $leads_to_show[] = $lead;
     }
 
-    return [$processed_leads, $total_pages];
+    return [$leads_to_show, $total_pages];
   }
 
   public function get_leads_from_files(array $saved_files, array $permitted_fields = []): array
@@ -292,7 +291,7 @@ class Lead extends Application_Record
     $updated_leads = $this->update_all($leads_to_be_updated, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
 
     if ($updated_leads === false) {
-      $error_messages[] = "Failed to assign leads";
+      $error_messages[] = "No leads assigned";
       return [null, $error_messages];
     }
 

@@ -650,13 +650,15 @@ class ActiveRecord extends Base
     return true;
   }
 
-  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $returning = []): array
+
+  // WIP: multiple values per filter
+  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $returning = [], array $filter = []): array
   {
     $results = [];
     $total_pages = 0;
 
     // get total number of records
-    $total_records = $this->count();
+    $total_records = count($this->fetch_by($filter, ['id']));
 
     // skip second query if no records found
     if (empty($total_records)) {
@@ -678,11 +680,25 @@ class ActiveRecord extends Base
 
     $select_clause = QueryBuilder::build_select_clause($returning, $this);
 
-    $sql = "SELECT {$select_clause} FROM {$this->TABLE} ORDER BY {$sort_by} {$sort_order} LIMIT {$offset}, {$limit}";
+    // build where clause
+    $where_conditions = [];
+    $bind_params = [];
+
+    foreach ($filter as $column => $value) {
+      $where_conditions[] = "{$column} = ?";
+      $bind_params[] = $value;
+    }
+
+    $where_clause = '';
+    if (!empty($where_conditions)) {
+      $where_clause .= "WHERE " . implode(" AND ", $where_conditions);
+    }
+
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} {$where_clause} ORDER BY {$sort_by} {$sort_order} LIMIT {$offset}, {$limit}";
 
     try {
       $statement = self::$DB->prepare($sql);
-      $statement->execute();
+      $statement->execute($bind_params);
       $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
       $this->ERRORS[] = $e->getMessage();

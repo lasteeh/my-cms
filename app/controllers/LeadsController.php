@@ -10,25 +10,25 @@ class LeadsController extends ApplicationController
 {
   public function index()
   {
-    $leads_per_index_page = isset($_GET['leads_per_page']) && is_int((int)($_GET['leads_per_page'])) ? $_GET['leads_per_page'] : 100; // customize page's maximum lead count
-    $default_sort_by = 'id';
+    $this->list('index');
+  }
 
-    // determin current page number
-    $current_page = (int)($_GET['page'] ?? 1);
-
-    // determine sort params
-    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : $default_sort_by;
-    $sort_order = (isset($_GET['sort_order']) && (strtolower($_GET['sort_order']) === 'asc')) ? 'asc' : 'desc';
-
-    // fetch leads for current page
-    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_index_page, $sort_order, $sort_by);
-
-    $this->set_object('leads', $leads);
-    $this->set_object('current_page', $current_page);
-    $this->set_object('total_pages', $total_pages);
-    $this->set_object('sort_order', $sort_order);
-    $this->set_object('sort_by', $sort_by);
-    $this->render();
+  public function unassigned()
+  {
+    $this->list('index', ['lead_assigned' => false]);
+  }
+  public function expireds()
+  {
+    // WIP: multiple values per filter
+    $this->list('index', ['listing_status' => 'Expired']);
+  }
+  public function frbo()
+  {
+    $this->list('index', ['listing_status' => 'FRBO']);
+  }
+  public function fsbo()
+  {
+    $this->list('index', ['listing_status' => 'FSBO']);
   }
 
   public function batch_add()
@@ -66,8 +66,48 @@ class LeadsController extends ApplicationController
       $alert_messages[] = "{$assigned_leads_count} leads assigned.";
     }
 
+    $url_params = '?';
+    $url_params .= http_build_query($_GET) ?? '';
 
-    $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+
+    $this->redirect("/dashboard/leads{$url_params}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
+  }
+
+  private function list(string $view, array $filter = [])
+  {
+    $leads_per_page = isset($_GET['leads_per_page']) && is_int((int)($_GET['leads_per_page'])) ? $_GET['leads_per_page'] : 200; // customize page's maximum lead count
+    $default_sort_by = 'id';
+
+    // determin current page number
+    $current_page = (int)($_GET['page'] ?? 1);
+
+    // determine sort params
+    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : $default_sort_by;
+    $sort_order = (isset($_GET['sort_order']) && (strtolower($_GET['sort_order']) === 'asc')) ? 'asc' : 'desc';
+
+    // determine filter params
+    $filter_by = isset($_GET['filter_by']) ? $_GET['filter_by'] : $filter;
+
+    // fetch leads for current page
+    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by);
+
+    if ($current_page > (int)$total_pages) {
+      $current_page = (int)$total_pages;
+    }
+
+    $url_params_map = [
+      'sort_order' => $sort_order,
+      'sort_by' => $sort_by,
+      'leads_per_page' => $leads_per_page,
+    ];
+
+    $url_params = http_build_query($url_params_map);
+
+    $this->set_object('leads', $leads);
+    $this->set_object('current_page', $current_page);
+    $this->set_object('total_pages', (int)$total_pages);
+    $this->set_object('url_params', $url_params);
+    $this->render($view);
   }
 
   private function save_files(array $files_params): array

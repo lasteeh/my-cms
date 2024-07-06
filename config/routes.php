@@ -72,6 +72,13 @@ return [
   // Cities
   '/dashboard/cities' => [
     'GET' => 'cities@index',
+    'POST' => 'cities@create',
+  ],
+  '/dashboard/cities/:id' => [
+    'POST' => 'cities@update',
+  ],
+  '/dashboard/cities/:id/edit' => [
+    'GET' => 'cities@edit',
   ],
 
   // Leads
@@ -83,6 +90,18 @@ return [
   ],
   '/dashboard/leads/assign' => [
     'GET' => 'leads@assign',
+  ],
+  '/dashboard/leads/unassigned' => [
+    'GET' => 'leads@unassigned',
+  ],
+  '/dashboard/leads/expireds' => [
+    'GET' => 'leads@expireds',
+  ],
+  '/dashboard/leads/frbo' => [
+    'GET' => 'leads@frbo',
+  ],
+  '/dashboard/leads/fsbo' => [
+    'GET' => 'leads@fsbo',
   ],
 
   // keyword "no_match" sets catch-all 

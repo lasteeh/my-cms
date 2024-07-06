@@ -141,16 +141,16 @@ class ActionController extends Base
     }
 
 
-    $params = [];
+    // $params = [];
 
-    if (!empty($messages['errors'])) {
-      $params['errors'] = count($messages['errors']);
-    }
+    // if (!empty($messages['errors'])) {
+    //   $params['errors'] = count($messages['errors']);
+    // }
 
     $redirect_url = self::$ROOT_URL . $url;
-    if (!empty($params)) {
-      $redirect_url .= '?' . http_build_query($params);
-    }
+    // if (!empty($params)) {
+    //   $redirect_url .= '?' . http_build_query($params);
+    // }
 
     header("Location:" . $redirect_url);
     exit();

@@ -3,8 +3,7 @@ $errors = $this->get_flash('errors');
 $alerts = $this->get_flash('alerts');
 $current_page = $this->get_object('current_page');
 $total_pages = $this->get_object('total_pages');
-$sort_order = $this->get_object('sort_order');
-$sort_by = $this->get_object('sort_by');
+$url_params = $this->get_object('url_params');
 ?>
 
 <?php
@@ -34,41 +33,92 @@ if ($alerts) {  ?>
 <h1>Leads</h1>
 
 <form action="<?php $this->url('/dashboard/leads/batch_add'); ?>" method="post" enctype="multipart/form-data" style="max-width: max-content; margin-inline-start: auto;">
-  <input type="file" name="leads[]" id="leads" accept=".csv" autocomplete="off" required multiple>
+  <input type="file" name="leads[]" accept=".csv" autocomplete="off" required multiple>
   <button type="submit">Upload</button>
 </form>
 
-<div style="display: flex; flex-flow: row wrap; justify-content: flex-end;">
-  <a href="<?php $this->url('/dashboard/leads/assign'); ?>">Assign Leads</a>
+
+<div class="actions" style="display: flex; flex-flow: row wrap; justify-content: flex-start; gap: 1em; margin-block: 1em;">
+  <a href="<?php $this->url("/dashboard/leads"); ?>">Show All</a>
+  <a href="<?php $this->url("/dashboard/leads/unassigned"); ?>">Unassigned Leads</a>
+  <a href="<?php $this->url("/dashboard/leads/expireds"); ?>">Expired Leads</a>
+  <a href="<?php $this->url("/dashboard/leads/frbo"); ?>">FRBO Leads</a>
+  <a href="<?php $this->url("/dashboard/leads/fsbo"); ?>">FSBO Leads</a>
+  <a href="<?php $this->url("/dashboard/leads/assign?{$url_params}"); ?>" style="margin-inline-start: auto;">Assign Leads</a>
 </div>
 
 <div>
-  <?php if ($current_page > 1) : ?>
-    <a href="?page=<?= $current_page - 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">&laquo; Previous</a>
+  <?php if ($current_page > 1 && $total_pages > 1) : ?>
+    <a href="?<?= $url_params ?>&page=<?= $current_page - 1 ?>">&laquo; Previous</a>
   <?php endif; ?>
 
   <?php for ($i = 1; $i <= $total_pages; $i++) : ?>
-    <?php if ($i == $current_page) : ?>
+    <?php if ($i == $current_page || $total_pages === 1) : ?>
       <span><?= $i ?></span>
     <?php else : ?>
-      <a href="?page=<?= $i ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>"><?= $i ?></a>
+      <a href="?<?= $url_params ?>&page=<?= $i ?>"><?= $i ?></a>
     <?php endif; ?>
   <?php endfor; ?>
 
   <?php if ($current_page < $total_pages) : ?>
-    <a href="?page=<?= $current_page + 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">Next &raquo;</a>
+    <a href="?<?= $url_params ?>&page=<?= $current_page + 1 ?>">Next &raquo;</a>
   <?php endif; ?>
 </div>
+
 <style>
+  table {
+    position: relative;
+    text-align: left;
+    border-spacing: 0;
+
+    isolation: isolate;
+  }
+
   table :where(th,
     td) {
     padding: 0.5em 0.75em;
     border: 1px solid darkgray;
   }
+
+  tr:first-child {
+    position: sticky;
+    top: 0;
+    background-color: lightgrey;
+    z-index: 1;
+  }
+
+  :where(td, th):first-child {
+    position: sticky;
+    left: 0;
+  }
+
+  th:first-child {
+    background-color: lightgrey;
+  }
+
+  td:first-child {
+    padding: 0.5em;
+    background-color: lightgrey;
+    color: black;
+  }
+
+  td:first-child p {
+    margin-inline-start: auto;
+    font-size: 0.75rem;
+  }
+
+  tr:not(:first-child):hover {
+    background-color: hsl(120, 73%, 75%, 0.1);
+  }
+
+  td>p {
+    width: max-content;
+  }
 </style>
-<div style="width: 100%; min-height: 25dvh; max-height: calc(75dvh - 2em); overflow: auto; border: 1px solid gray;">
-  <table style="position: relative; text-align: left; border-spacing: 0;">
-    <tr style="position: sticky; top: 0; background-color: lightgray;">
+<div style="position: relative; width: 100%; min-height: min-content; max-height: calc(75dvh - 4em); overflow: auto; border: 1px solid gray;">
+  <table>
+    <tr>
+      <th></th>
       <th>Vortex ID</th>
       <th>Import Status</th>
       <th>Listing Status</th>
@@ -102,9 +152,12 @@ if ($alerts) {  ?>
     <?php
     $leads = $this->get_object('leads');
 
-    foreach ($leads as $lead) {
+    foreach ($leads as $index => $lead) {
+      $row_number = $index + 1;
       $vortex_id = $lead['vortex_id'];
       $lead_imported = $lead['lead_imported'];
+      $lead_assigned = $lead['lead_assigned'];
+      $lead_processed = $lead['lead_processed'];
       $listing_status = $lead['listing_status'];
       $name = $lead['name'];
       $phone = $lead['phone'];
@@ -132,53 +185,37 @@ if ($alerts) {  ?>
       $buyer_seller = $lead['buyer_seller'];
       $agent_assigned = $lead['agent_assigned'];
 
-      $warning_color = "darkred";
-      $ignore_color = "lightgray";
-
-      $missing_county_info = $lead['property_county'] === "MISSING COUNTY INFO" ? true : false;
-      $area_not_assigned = $lead['assigned_area'] === "IGNORE ROW" ? true : false;
-
-      $background_color = "transparent";
-      $color = "black";
-      if ($area_not_assigned) {
-        $background_color = $ignore_color;
-        $color = "darkgray";
-      }
-      if ($missing_county_info) {
-        $background_color = $warning_color;
-        $color = "white";
-      }
-
       $row = <<<HTML
-        <tr style="background-color: $background_color; color: $color;">
-          <td>$vortex_id</td>
-          <td>$lead_imported</td>
-          <td>$listing_status</td>
-          <td>$name</td>
-          <td>$phone</td>
-          <td>$phone_2</td>
-          <td>$phone_3</td>
-          <td>$email</td>
-          <td>$mailing_street</td>
-          <td>$mailing_city</td>
-          <td>$mailing_state</td>
-          <td>$mailing_zip</td>
-          <td>$list_price</td>
-          <td>$status_date</td>
-          <td>$mls_fsbo_id</td>
-          <td>$standardized_mailing_street</td>
-          <td>$absentee_owner</td>
-          <td>$standardized_property_street</td>
-          <td>$property_address</td>
-          <td>$property_city</td>
-          <td>$property_state</td>
-          <td>$property_zip</td>
-          <td>$property_county</td>
-          <td>$assigned_area</td>
-          <td>$source</td>
-          <td>$pipeline</td>
-          <td>$buyer_seller</td>
-          <td>$agent_assigned</td>
+        <tr>
+          <td><p>$row_number</p></td>
+          <td><p>$vortex_id</p></td>
+          <td><p>$lead_imported</p></td>
+          <td><p>$listing_status</p></td>
+          <td><p>$name</p></td>
+          <td><p>$phone</p></td>
+          <td><p>$phone_2</p></td>
+          <td><p>$phone_3</p></td>
+          <td><p>$email</p></td>
+          <td><p>$mailing_street</p></td>
+          <td><p>$mailing_city</p></td>
+          <td><p>$mailing_state</p></td>
+          <td><p>$mailing_zip</p></td>
+          <td><p>$list_price</p></td>
+          <td><p>$status_date</p></td>
+          <td><p>$mls_fsbo_id</p></td>
+          <td><p>$standardized_mailing_street</p></td>
+          <td><p>$absentee_owner</p></td>
+          <td><p>$standardized_property_street</p></td>
+          <td><p>$property_address</p></td>
+          <td><p>$property_city</p></td>
+          <td><p>$property_state</p></td>
+          <td><p>$property_zip</p></td>
+          <td><p>$property_county</p></td>
+          <td><p>$assigned_area</p></td>
+          <td><p>$source</p></td>
+          <td><p>$pipeline</p></td>
+          <td><p>$buyer_seller</p></td>
+          <td><p>$agent_assigned</p></td>
         </tr>
       HTML;
       echo $row;
@@ -189,19 +226,19 @@ if ($alerts) {  ?>
 </div>
 
 <div>
-  <?php if ($current_page > 1) : ?>
-    <a href="?page=<?= $current_page - 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">&laquo; Previous</a>
+  <?php if ($current_page > 1 && $total_pages > 1) : ?>
+    <a href="?<?= $url_params ?>&page=<?= $current_page - 1 ?>">&laquo; Previous</a>
   <?php endif; ?>
 
   <?php for ($i = 1; $i <= $total_pages; $i++) : ?>
-    <?php if ($i == $current_page) : ?>
+    <?php if ($i == $current_page || $total_pages === 1) : ?>
       <span><?= $i ?></span>
     <?php else : ?>
-      <a href="?page=<?= $i ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>"><?= $i ?></a>
+      <a href="?<?= $url_params ?>&page=<?= $i ?>"><?= $i ?></a>
     <?php endif; ?>
   <?php endfor; ?>
 
   <?php if ($current_page < $total_pages) : ?>
-    <a href="?page=<?= $current_page + 1 ?>&sort_order=<?= $sort_order ?>&sort_by=<?= $sort_by ?>">Next &raquo;</a>
+    <a href="?<?= $url_params ?>&page=<?= $current_page + 1 ?>">Next &raquo;</a>
   <?php endif; ?>
 </div>
