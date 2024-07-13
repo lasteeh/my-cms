@@ -41,6 +41,7 @@ if ($alerts) {  ?>
 <div class="actions" style="display: flex; flex-flow: row wrap; justify-content: flex-start; gap: 1em; margin-block: 1em;">
   <a href="<?php $this->url("/dashboard/leads"); ?>">Show All</a>
   <a href="<?php $this->url("/dashboard/leads/unassigned"); ?>">Unassigned Leads</a>
+  <a href="<?php $this->url("/dashboard/leads/absentee_owner"); ?>">Absentee Owners</a>
   <a href="<?php $this->url("/dashboard/leads/expireds"); ?>">Expired Leads</a>
   <a href="<?php $this->url("/dashboard/leads/frbo"); ?>">FRBO Leads</a>
   <a href="<?php $this->url("/dashboard/leads/fsbo"); ?>">FSBO Leads</a>
@@ -67,6 +68,12 @@ if ($alerts) {  ?>
 
 <style>
   table {
+    --bg-yellow: 60, 100%, 50%;
+    --bg-red: 0, 100%, 50%;
+    --bg-green: 120, 100%, 25%;
+    --bg-gray: 0, 0%, 50%;
+    --bg-blue: 240, 100%, 50%;
+
     position: relative;
     text-align: left;
     border-spacing: 0;
@@ -76,7 +83,7 @@ if ($alerts) {  ?>
 
   table :where(th,
     td) {
-    padding: 0.5em 0.75em;
+    padding: 0.1em 0.75em;
     border: 1px solid darkgray;
   }
 
@@ -107,15 +114,35 @@ if ($alerts) {  ?>
     font-size: 0.75rem;
   }
 
+
+  tr:where([data-lead-assigned="false"]) {
+    --bg-color: var(--bg-red);
+    background-color: hsl(var(--bg-color), 0.5);
+  }
+
+  tr:where([data-lead-assigned="true"][data-area-assigned="false"]) {
+    --bg-color: var(--bg-gray);
+    background-color: hsl(var(--bg-color), 0.5);
+    color: hsl(var(--bg-gray));
+  }
+
+  tr:where([data-absentee-owner="true"]) td.absentee_owner {
+    background-color: hsl(var(--bg-blue), 0.3);
+  }
+
   tr:not(:first-child):hover {
-    background-color: hsl(120, 73%, 75%, 0.1);
+    background-color: hsl(var(--bg-color, var(--bg-green)), 0.1);
+  }
+
+  tr:focus {
+    background-color: hsl(var(--bg-color, var(--bg-green)), 0.2);
   }
 
   td>p {
     width: max-content;
   }
 </style>
-<div style="position: relative; width: 100%; min-height: min-content; max-height: calc(75dvh - 4em); overflow: auto; border: 1px solid gray;">
+<div style="position: relative; width: 100%; min-height: min-content; height: calc(75dvh - 6em); overflow: auto; border: 1px solid gray; resize: vertical;">
   <table>
     <tr>
       <th></th>
@@ -154,6 +181,7 @@ if ($alerts) {  ?>
 
     foreach ($leads as $index => $lead) {
       $row_number = $index + 1;
+      $lead_id = $lead['id'];
       $vortex_id = $lead['vortex_id'];
       $lead_imported = $lead['lead_imported'];
       $lead_assigned = $lead['lead_assigned'];
@@ -185,8 +213,14 @@ if ($alerts) {  ?>
       $buyer_seller = $lead['buyer_seller'];
       $agent_assigned = $lead['agent_assigned'];
 
+      $is_lead_assigned = $lead['lead_assigned'] ? 'true' : 'false';
+      $is_area_assigned = $lead['assigned_area'] === "IGNORE ROW" ? 'false' : 'true';
+      $is_absentee_owner = $lead['absentee_owner'] === "Yes" ? 'true' : 'false';
+
+      $ao_toggle_link = $this->get_url("/dashboard/leads/ao_toggle/{$lead_id}");
+
       $row = <<<HTML
-        <tr>
+        <tr data-lead-assigned="$is_lead_assigned" data-area-assigned="$is_area_assigned" data-absentee-owner="$is_absentee_owner" tabindex="0">
           <td><p>$row_number</p></td>
           <td><p>$vortex_id</p></td>
           <td><p>$lead_imported</p></td>
@@ -204,7 +238,7 @@ if ($alerts) {  ?>
           <td><p>$status_date</p></td>
           <td><p>$mls_fsbo_id</p></td>
           <td><p>$standardized_mailing_street</p></td>
-          <td><p>$absentee_owner</p></td>
+          <td class="absentee_owner"><p><a href="$ao_toggle_link">$absentee_owner</a></p></td>
           <td><p>$standardized_property_street</p></td>
           <td><p>$property_address</p></td>
           <td><p>$property_city</p></td>

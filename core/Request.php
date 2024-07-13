@@ -57,6 +57,7 @@ class Request extends Base
     $match_found = false;
 
     foreach ($configured_routes as $route => $methods) {
+      if ($match_found) break;
       foreach ($methods as $method => $controller_name_action_pair) {
         // create a regular expression pattern to match the url.
         $route_pattern = str_replace('/', '\/', $route);

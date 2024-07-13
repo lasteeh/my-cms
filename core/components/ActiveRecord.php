@@ -685,8 +685,14 @@ class ActiveRecord extends Base
     $bind_params = [];
 
     foreach ($filter as $column => $value) {
-      $where_conditions[] = "{$column} = ?";
-      $bind_params[] = $value;
+      if (is_array($value)) {
+        $placeholders = implode(", ", array_fill(0, count($value), "?"));
+        $where_conditions[] = "{$column} IN ({$placeholders})";
+        $bind_params = array_merge($bind_params, $value);
+      } else {
+        $where_conditions[] = "{$column} = ?";
+        $bind_params[] = $value;
+      }
     }
 
     $where_clause = '';
@@ -749,13 +755,32 @@ class ActiveRecord extends Base
       $this->handle_errors();
     }
 
-    $sql = "SELECT {$select_clause} FROM {$this->TABLE} WHERE ";
-    [$sql, $placeholders] = QueryBuilder::build_where_clause($sql, $conditions);
+    $sql = "SELECT {$select_clause} FROM {$this->TABLE} ";
+
+    // where clause
+    $where_conditions = [];
+    $bind_params = [];
+
+    foreach ($conditions as $column => $value) {
+      if (is_array($value)) {
+        $placeholders = implode(', ', array_fill(0, count($value), '?'));
+        $where_conditions[] = "{$column} IN ({$placeholders})";
+        $bind_params = array_merge($bind_params, $value);
+      } else {
+        $where_conditions[] = "{$column} = ?";
+        $bind_params[] = $value;
+      }
+    }
+
+    if (!empty($where_conditions)) {
+      $sql .= " WHERE " . implode(" AND ", $where_conditions);
+    }
+
     try {
 
       $statement = self::$DB->prepare($sql);
-      foreach ($placeholders as $placeholder => $value) {
-        $statement->bindValue($placeholder, $value);
+      foreach ($bind_params as $key => $value) {
+        $statement->bindValue($key + 1, $value);
       }
 
       $statement->execute();

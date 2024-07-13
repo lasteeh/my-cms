@@ -13,22 +13,27 @@ class LeadsController extends ApplicationController
     $this->list('index');
   }
 
-  public function unassigned()
+  public function category()
   {
-    $this->list('index', ['lead_assigned' => false]);
-  }
-  public function expireds()
-  {
-    // WIP: multiple values per filter
-    $this->list('index', ['listing_status' => 'Expired']);
-  }
-  public function frbo()
-  {
-    $this->list('index', ['listing_status' => 'FRBO']);
-  }
-  public function fsbo()
-  {
-    $this->list('index', ['listing_status' => 'FSBO']);
+    $category = $this->get_route_param('category');
+
+    switch ($category) {
+      case 'unassigned':
+        $this->list('index', ['lead_assigned' => false]);
+        break;
+      case 'absentee_owner':
+        $this->list('index', ['absentee_owner' => true]);
+        break;
+      case 'expireds':
+        $this->list('index', ['listing_status' => ['Expired', 'Withdrawn', 'Off Market']]);
+        break;
+      case 'frbo':
+        $this->list('index', ['listing_status' => 'FRBO']);
+        break;
+      case 'fsbo':
+        $this->list('index', ['listing_status' => 'fsbo']);
+        break;
+    }
   }
 
   public function batch_add()
@@ -70,7 +75,25 @@ class LeadsController extends ApplicationController
     $url_params .= http_build_query($_GET) ?? '';
 
 
-    $this->redirect("/dashboard/leads{$url_params}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    $this->redirect("/dashboard/leads/unassigned{$url_params}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
+  }
+
+  public function ao_toggle()
+  {
+    $error_messages = [];
+    $lead = $this->set_current_lead();
+
+    if (!$lead) {
+      $error_messages[] = "Lead not found.";
+    } else {
+      $absentee_owner = $lead->absentee_owner ?? true;
+      $lead->update_column('absentee_owner', !$absentee_owner);
+    }
+
+    $url_params = '?';
+    $url_params .= http_build_query($_GET) ?? '';
+
+    $this->redirect("/dashboard/leads/absentee_owner{$url_params}", ['errors' => $error_messages]);
   }
 
   private function list(string $view, array $filter = [])
@@ -168,6 +191,11 @@ class LeadsController extends ApplicationController
     }
 
     return [$saved_files, $error_messages];
+  }
+
+  private function set_current_lead()
+  {
+    return (new Lead)->find_by(['id' => $this->get_route_param('id')]);
   }
 
   private function files_params()

@@ -120,6 +120,9 @@ class Lead extends Application_Record
         $lead['assigned_area'] = "MISSING COUNTY INFO";
       }
 
+      // absentee owner
+      $lead['absentee_owner'] = $lead['absentee_owner'] ? "Yes" : "No";
+
       // add to processed leads
       $leads_to_show[] = $lead;
     }

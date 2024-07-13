@@ -91,17 +91,11 @@ return [
   '/dashboard/leads/assign' => [
     'GET' => 'leads@assign',
   ],
-  '/dashboard/leads/unassigned' => [
-    'GET' => 'leads@unassigned',
+  '/dashboard/leads/:category' => [
+    'GET' => 'leads@category',
   ],
-  '/dashboard/leads/expireds' => [
-    'GET' => 'leads@expireds',
-  ],
-  '/dashboard/leads/frbo' => [
-    'GET' => 'leads@frbo',
-  ],
-  '/dashboard/leads/fsbo' => [
-    'GET' => 'leads@fsbo',
+  '/dashboard/leads/ao_toggle/:id' => [
+    'GET' => 'leads@ao_toggle',
   ],
 
   // keyword "no_match" sets catch-all 
