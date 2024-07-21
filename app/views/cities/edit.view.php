@@ -81,5 +81,10 @@ $viewport_se = $current_city->viewport_se;
     <input type="text" name="viewport_nw" placeholder="Viewport NW" value="<?= $viewport_nw ?>">
     <input type="text" name="viewport_se" placeholder="Viewport SE" value="<?= $viewport_se ?>">
   </div>
-  <button type="submit">Update City</button>
+  <div style="display: inline-block;">
+    <button style="display: block;" type="submit">Update City</button>
+    <button style="display: block;" type="submit" form="delete_city">Delete City</button>
+  </div>
+</form>
+<form id="delete_city" action="<?php $this->url("/dashboard/cities/{$current_city->id}/delete"); ?>" method="post">
 </form>

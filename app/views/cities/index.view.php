@@ -104,31 +104,24 @@ if ($errors) {  ?>
 
 <style>
   table {
+    position: relative;
     text-align: left;
-    border-spacing: 0em;
+    border-spacing: 0;
 
     isolation: isolate;
   }
 
   table :where(th,
     td) {
-    padding: 0.5em 0.75em;
+    padding: 0.1em 0.75em;
     border: 1px solid darkgray;
   }
 
   tr:first-child {
     position: sticky;
     top: 0;
-    background-color: lightgray;
-
-    z-index: 1;
-  }
-
-  :where(td, th):last-child {
-    position: sticky;
-    right: 0;
-
     background-color: lightgrey;
+    z-index: 1;
   }
 
   :where(td, th):first-child {
@@ -136,25 +129,82 @@ if ($errors) {  ?>
     left: 0;
   }
 
-  td:first-child {
-    background-color: white;
+  :where(td, th):nth-child(2) {
+    position: sticky;
+    left: 0.5em;
+  }
+
+  th:nth-child(2) {
+    background-color: lightgray;
+  }
+
+  td:nth-child(2) {
+    background-color: var(--bg-hover, white);
+  }
+
+  :where(td, th):last-child {
+    position: sticky;
+    right: 0;
+  }
+
+  :where(td, th):where(:first-child, :last-child) {
+    background-color: lightgrey;
   }
 
   th:first-child {
     background-color: lightgrey;
   }
 
-  tr:not(:first-child):hover {
-    background-color: hsl(120, 73%, 75%, 0.1);
+  td:first-child {
+    padding: 0.5em;
+    background-color: lightgrey;
+    color: black;
   }
 
-  td>p {
+  td:first-child p {
+    margin-inline-start: auto;
+    font-size: 0.75rem;
+  }
+
+
+  tr:where([data-lead-assigned="false"]) {
+    --bg-color: var(--bg-red);
+    background-color: hsl(var(--bg-color), 0.2);
+  }
+
+  tr:where([data-lead-assigned="true"][data-area-assigned="false"]) {
+    --bg-color: var(--bg-gray);
+    background-color: hsl(var(--bg-color), 0.2);
+    color: hsl(var(--bg-gray));
+  }
+
+  tr:where([data-absentee-owner="true"]) td.absentee_owner {
+    background-color: hsl(var(--bg-orange), 0.2);
+  }
+
+  tr:not(:first-child):hover {
+    --bg-hover: hsl(var(--bg-color, var(--bg-blue)), 1);
+    background-color: hsl(var(--bg-color, var(--bg-blue)), 1);
+  }
+
+  tr:focus {
+    background-color: hsl(var(--bg-color, var(--bg-blue)), 0.5);
+  }
+
+  td:not(:has(a))>p {
     width: max-content;
+  }
+
+  td:has(a)>p,
+  td:has(a)>p>a {
+    display: block;
+    width: 100%;
   }
 </style>
 <div style="width: 100%; min-height: 25dvh; max-height: calc(75dvh - 6em); overflow: auto; border: 1px solid gray;">
   <table>
     <tr>
+      <th></th>
       <th>City</th>
       <th>State</th>
       <th>Zip Code</th>
@@ -171,10 +221,11 @@ if ($errors) {  ?>
     <?php
     $cities = $this->get_object('cities');
 
-    foreach ($cities as $city) {
+    foreach ($cities as $index => $city) {
 
       $edit_link = $this->get_url("/dashboard/cities/{$city['id']}/edit");
 
+      $row_number = $index;
       $city_name = $city['name'];
       $city_state = $city['state'];
       $city_zip = $city['zip_codes'];
@@ -188,6 +239,7 @@ if ($errors) {  ?>
 
       $row = <<<HTML
         <tr>
+          <td><p>$row_number</p></td>
           <td><p>$city_name</p></td>
           <td><p>$city_state</p></td>
           <td><p style='max-width: 25ch; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;'>$city_zip</p></td>

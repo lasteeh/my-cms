@@ -80,22 +80,31 @@ return [
   '/dashboard/cities/:id/edit' => [
     'GET' => 'cities@edit',
   ],
+  '/dashboard/cities/:id/delete' => [
+    'POST' => 'cities@delete',
+  ],
 
   // Leads
   '/dashboard/leads' => [
     'GET' => 'leads@index',
   ],
-  '/dashboard/leads/batch_add' => [
+  '/dashboard/leads/batch/add' => [
     'POST' => 'leads@batch_add',
   ],
   '/dashboard/leads/assign' => [
     'GET' => 'leads@assign',
   ],
   '/dashboard/leads/:category' => [
-    'GET' => 'leads@category',
+    'GET' => 'leads@categorize',
   ],
-  '/dashboard/leads/ao_toggle/:id' => [
-    'GET' => 'leads@ao_toggle',
+  '/dashboard/leads/:category/:sub_category' => [
+    'GET' => 'leads@categorize',
+  ],
+  '/dashboard/leads/toggle/:property/:id' => [
+    'POST' => 'leads@toggle',
+  ],
+  '/dashboard/leads/export/:area/:category' => [
+    'POST' => 'leads@export',
   ],
 
   // keyword "no_match" sets catch-all 

@@ -167,4 +167,12 @@ class ActionView extends Base
       echo $info;
     }
   }
+  public function get_page_info(string $key)
+  {
+    $info = $this->page_info[$key] ?? '';
+
+    if (!empty($info) && is_string($info)) {
+      return $info;
+    }
+  }
 }

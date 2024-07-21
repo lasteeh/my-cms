@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Controllers\ApplicationController;
 use App\Models\City;
 use App\Models\County;
+use App\Models\Lead;
 
 class CitiesController extends ApplicationController
 {
@@ -31,10 +32,26 @@ class CitiesController extends ApplicationController
 
   public function create()
   {
+    $error_messages = [];
+    $alert_messages = [];
+
+    $origin_url = $_POST['origin_url'] ?? '/dashboard/cities';
+
     $city = new City;
     list($city, $error_messages) = $city->add($this->city_params());
 
-    $this->redirect('/dashboard/cities', ['errors' => $error_messages]);
+    // assign leads automatically if from other pages
+    if (!empty($_POST['origin_url'])) {
+      list($assigned_leads, $errors) = (new Lead)->assign_leads();
+      $error_messages = array_merge($error_messages, $errors);
+
+      if (is_array($assigned_leads)) {
+        $assigned_leads_count = count($assigned_leads);
+        $alert_messages[] = "{$assigned_leads_count} leads assigned.";
+      }
+    }
+
+    $this->redirect("{$origin_url}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
   public function edit()
@@ -62,6 +79,22 @@ class CitiesController extends ApplicationController
     list($current_city, $error_messages) = $current_city->update($this->city_params());
 
     $this->redirect("/dashboard/cities/{$current_city->id}/edit", ['errors' => $error_messages]);
+  }
+
+  public function delete()
+  {
+    $current_city = $this->set_current_city();
+
+    if ($current_city) {
+      list($current_city, $error_messages) = $current_city->delete();
+
+      if ($error_messages) {
+        $this->redirect("/dashboard/cities/{$current_city->id}/edit", ['errors' => $error_messages]);
+      } else {
+        $alerts[] = "City deleted.";
+        $this->redirect('/dashboard/cities', ['alerts' => $alerts]);
+      }
+    }
   }
 
   private function set_current_city()

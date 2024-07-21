@@ -57,6 +57,13 @@ class City extends Application_Record
     return [$this, $this->ERRORS];
   }
 
+  public function delete(): array
+  {
+    $this->destroy();
+
+    return [$this, $this->ERRORS];
+  }
+
   protected function normalize_zip_codes()
   {
     $zip_codes = explode(",", $this->zip_codes);

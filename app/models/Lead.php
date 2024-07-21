@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use App\Models\Application_Record;
+use DateTime;
 
 class Lead extends Application_Record
 {
   public string $vortex_id;
-  public bool $lead_imported;
+  public bool $import_lead;
   public bool $lead_assigned;
-  public bool $lead_processed;
   public ?string $listing_status;
   public ?string $name;
   public ?string $name_2;
@@ -102,8 +102,8 @@ class Lead extends Application_Record
     foreach ($leads as $lead) {
       $is_county_info_available = !empty($lead['property_county']) ? true : false;
 
-      // lead_imported
-      $lead['lead_imported'] = $lead['lead_imported'] ? "Do Not Import" : "Import";
+      // import_lead
+      $lead['import_lead'] = $lead['import_lead'] ? "Import" : "Do Not Import";
 
       // property_county
       $county_id = $lead['property_county'] ?? 'N/A';
@@ -172,7 +172,20 @@ class Lead extends Application_Record
           $field_name = str_replace(" ", "_", $field_name);
           $field_name = str_replace("/", "_", $field_name);
 
-          $lead[$field_name] = empty($lead_data[$field]) ? null : $lead_data[$field];
+          // $lead[$field_name] = empty($lead_data[$field]) ? null : $lead_data[$field];
+          $field_value = empty($lead_data[$field]) ? null : $lead_data[$field];
+
+          // process date fields
+          $date_fields = ['list_date', 'lead_date', 'expired_date', 'withdrawn_date', 'status_date'];
+          if (in_array($field_name, $date_fields) && !empty($field_value)) {
+            // convert date format
+            $date = DateTime::createFromFormat('m-d-Y', $field_value);
+            if ($date) {
+              $field_value = $date->format('Y-m-d');
+            }
+          }
+
+          $lead[$field_name] = $field_value;
         }
 
         $file_leads[] = $lead;
@@ -200,7 +213,7 @@ class Lead extends Application_Record
 
   public function assign_leads(): array
   {
-    $unassigned_leads = $this->fetch_by(['lead_assigned' => false], ['id', 'vortex_id', 'lead_assigned', 'property_city', 'property_county', 'assigned_area', 'mailing_street', 'absentee_owner', 'property_address', 'standardized_mailing_street', 'standardized_property_street', 'source', 'pipeline', 'buyer_seller', 'agent_assigned']);
+    $unassigned_leads = $this->fetch_by(['lead_assigned' => false, 'import_lead' => true], ['id', 'vortex_id', 'import_lead', 'listing_status', 'lead_assigned', 'property_city', 'property_county', 'assigned_area', 'mailing_street', 'absentee_owner', 'property_address', 'standardized_mailing_street', 'standardized_property_street', 'source', 'pipeline', 'buyer_seller', 'agent_assigned']);
     $all_cities = (new City)->fetch_by([], ['id', 'name', 'county_id']);
 
     $city_to_county = [];
@@ -267,8 +280,9 @@ class Lead extends Application_Record
       // === process source, pipeline, buyer/seller, agent assigned ===
 
       // determine source if REDX or Absentee Owner
+      $is_expired = (isset($lead['listing_status']) && in_array(trim($lead['listing_status']), ["FSBO", "FRBO"])) ? false : true;
       $absentee_owner = isset($lead['absentee_owner']) ? (bool) $lead['absentee_owner'] : false;
-      $lead['source'] = $absentee_owner ? 'Absentee Owner' : 'REDX';
+      $lead['source'] = $absentee_owner && $is_expired ? 'Absentee Owner' : 'REDX';
 
       // set pipeline, buyer/seller, and agent assigned
       $lead['pipeline'] = 'New Lead';
@@ -276,7 +290,6 @@ class Lead extends Application_Record
       $lead['agent_assigned'] = 'Jessica Knight';
 
       // check if assigning is complete
-
       $county_checked = isset($lead['property_county']) && !empty($lead['property_county']);
       $source_checked = isset($lead['source']) && !empty($lead['source']);
       $pipeline_checked = isset($lead['pipeline']) && !empty($lead['pipeline']);
@@ -285,6 +298,10 @@ class Lead extends Application_Record
 
       if ($county_checked && $source_checked && $pipeline_checked & $buyer_seller_checked && $agent_assigned_checked) {
         $lead['lead_assigned'] = true;
+      }
+
+      if ($county_checked && empty($lead['assigned_area'])) {
+        $lead['import_lead'] = false;
       }
 
       // inlcude lead to be assigned
@@ -315,7 +332,6 @@ class Lead extends Application_Record
     $address_parts = explode(" ", $address);
 
     $standardized_address = "";
-
     foreach ($address_parts as $part) {
       if (!array_key_exists($part, $suffix_lookup)) {
         $standardized_address .= $part . " ";
@@ -323,6 +339,9 @@ class Lead extends Application_Record
         $standardized_address .= $suffix_lookup[$part] . " ";
       }
     }
+
+    // replace multiple spaces with a single space
+    $standardized_address = preg_replace('/\s+/', ' ', $standardized_address);
 
     return trim($standardized_address);
   }

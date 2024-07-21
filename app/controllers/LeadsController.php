@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\ApplicationController;
+use App\Models\County;
 use App\Models\Lead;
 use DateTime;
 
@@ -10,31 +11,137 @@ class LeadsController extends ApplicationController
 {
   public function index()
   {
-    $this->list('index');
+    $this->list();
   }
-
-  public function category()
+  public function categorize()
   {
-    $category = $this->get_route_param('category');
+    $category = $this->get_route_param('category') ?? '';
+    $sub_category = $this->get_route_param('sub_category') ?? '';
 
     switch ($category) {
       case 'unassigned':
-        $this->list('index', ['lead_assigned' => false]);
+        $this->list(
+          ['title' => "Unassigned Leads", 'lead_category' => "unassigned"],
+          ['lead_assigned' => false, 'import_lead' => true],
+        );
         break;
       case 'absentee_owner':
-        $this->list('index', ['absentee_owner' => true]);
+        $this->list(
+          ['title' => "Absentee Owners", 'lead_category' => "absentee_owner"],
+          ['absentee_owner' => true, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market']],
+        );
         break;
-      case 'expireds':
-        $this->list('index', ['listing_status' => ['Expired', 'Withdrawn', 'Off Market']]);
+      case 'expired':
+        $this->list(
+          ['title' => "Expireds", 'lead_category' => "expired"],
+          ['absentee_owner' => false, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market']],
+        );
         break;
       case 'frbo':
-        $this->list('index', ['listing_status' => 'FRBO']);
+        $this->list(
+          ['title' => "FRBO", 'lead_category' => "frbo"],
+          ['listing_status' => 'FRBO'],
+        );
         break;
       case 'fsbo':
-        $this->list('index', ['listing_status' => 'fsbo']);
+        $this->list(
+          ['title' => "FSBO", 'lead_category' => "fsbo"],
+          ['listing_status' => 'FSBO'],
+        );
+        break;
+
+      case 'montgomery':
+        $filters = [
+          'assigned_area' => 'montgomery',
+        ];
+        $options = [
+          'title' => 'Montgomery',
+          'lead_area' => $category,
+          'lead_category' => $sub_category,
+        ];
+
+        switch ($sub_category) {
+          case "absentee_owner":
+            $options['title'] = "Montgomery - Expired Absentee Owners";
+
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['absentee_owner'] = true;
+            $filters['import_lead'] = true;
+            break;
+          case "expired":
+            $options['title'] = "Montgomery - Expireds";
+
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['absentee_owner'] = false;
+            $filters['import_lead'] = true;
+            break;
+          case "frbo":
+            $options['title'] = "Montgomery - FRBO";
+
+            $filters['listing_status'] = 'FRBO';
+            $filters['import_lead'] = true;
+            break;
+          case "fsbo":
+            $options['title'] = "Montgomery - FSBO";
+
+            $filters['listing_status'] = 'FSBO';
+            $filters['import_lead'] = true;
+            break;
+        }
+
+        $this->list(
+          $options,
+          $filters,
+        );
+        break;
+
+      case 'auburn':
+        $filters = [
+          'assigned_area' => 'auburn',
+        ];
+        $options = [
+          'title' => 'Auburn',
+          'lead_area' => $category,
+          'lead_category' => $sub_category,
+        ];
+
+        switch ($sub_category) {
+          case "absentee_owner":
+            $options['title'] = "Auburn - Expired Absentee Owners";
+
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['absentee_owner'] = true;
+            $filters['import_lead'] = true;
+            break;
+          case "expired":
+            $options['title'] = "Auburn - Expireds";
+
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['absentee_owner'] = false;
+            $filters['import_lead'] = true;
+            break;
+          case "frbo":
+            $options['title'] = "Auburn - FRBO";
+
+            $filters['listing_status'] = 'FRBO';
+            $filters['import_lead'] = true;
+            break;
+          case "fsbo":
+            $options['title'] = "Auburn - FSBO";
+
+            $filters['listing_status'] = 'FSBO';
+            $filters['import_lead'] = true;
+            break;
+        }
+
+        $this->list(
+          $options,
+          $filters,
+        );
         break;
     }
   }
+
 
   public function batch_add()
   {
@@ -52,10 +159,19 @@ class LeadsController extends ApplicationController
 
     if (is_array($leads)) {
       $lead_count = count($leads);
-      $alert_messages[] = "{$lead_count} new leads found.";
-    }
 
-    $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+      if ($lead_count > 0) {
+        $alert_messages[] = "{$lead_count} new leads found.";
+        $redirect_link = "/dashboard/leads/unassigned";
+      } else {
+        $error_messages[] = "No new leads found.";
+        $redirect_link = "/dashboard/leads";
+      }
+
+      $this->redirect($redirect_link, ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    } else {
+      $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    }
   }
 
   public function assign()
@@ -71,45 +187,80 @@ class LeadsController extends ApplicationController
       $alert_messages[] = "{$assigned_leads_count} leads assigned.";
     }
 
-    $url_params = '?';
-    $url_params .= http_build_query($_GET) ?? '';
-
-
-    $this->redirect("/dashboard/leads/unassigned{$url_params}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    $this->redirect("/dashboard/leads/unassigned", ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
-  public function ao_toggle()
+  public function toggle()
   {
+    $property = $this->get_route_param('property');
+
     $error_messages = [];
     $lead = $this->set_current_lead();
 
     if (!$lead) {
       $error_messages[] = "Lead not found.";
     } else {
-      $absentee_owner = $lead->absentee_owner ?? true;
-      $lead->update_column('absentee_owner', !$absentee_owner);
+      switch ($property) {
+        case 'absentee_owner':
+          $absentee_owner = $lead->absentee_owner ?? true;
+          $lead->update_column('absentee_owner', !$absentee_owner);
+          break;
+
+        case 'import_lead':
+          $import_lead = $lead->import_lead ?? true;
+          $lead->update_column('import_lead', !$import_lead);
+          break;
+      }
     }
 
-    $url_params = '?';
-    $url_params .= http_build_query($_GET) ?? '';
+    $row = $_POST['row'] ?? '';
+    $origin_url = $_POST['origin_url'] ?? '/dashboard/leads';
 
-    $this->redirect("/dashboard/leads/absentee_owner{$url_params}", ['errors' => $error_messages]);
+    $this->redirect("{$origin_url}#{$row}", ['errors' => $error_messages]);
   }
 
-  private function list(string $view, array $filter = [])
+  public function export()
   {
-    $leads_per_page = isset($_GET['leads_per_page']) && is_int((int)($_GET['leads_per_page'])) ? $_GET['leads_per_page'] : 200; // customize page's maximum lead count
-    $default_sort_by = 'id';
+    $area = $this->get_route_param('area') ?? "";
+    $category = $this->get_route_param('category') ?? "";
+  }
 
-    // determin current page number
-    $current_page = (int)($_GET['page'] ?? 1);
+  private function list(array $options = [], array $filters = [])
+  {
+    $view = "index";
+    $page_title = $options['title'] ?? 'Leads';
+    $lead_category = $options['lead_category'] ?? "";
+    $lead_area = $options['lead_area'] ?? "";
+
+    if ($lead_category === "unassigned") {
+      $counties = (new County)->all();
+      $this->set_object('counties', $counties);
+    }
+
+    // default search params
+    $default = [
+      'leads_per_page' => 100,
+      'sort_by' => 'id',
+      'sort_order' => 'desc',
+      'current_page' => 1,
+      'total_page' => 1,
+      'filter_by' => $filters,
+    ];
+
+    // determine lead count to show
+    $leads_per_page = isset($_GET['leads_per_page'])
+      && is_int((int)($_GET['leads_per_page']))
+      ? $_GET['leads_per_page'] : $default['leads_per_page'];
+
+    // determine current page number
+    $current_page = (int)($_GET['page'] ?? $default['current_page']);
 
     // determine sort params
-    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : $default_sort_by;
+    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : $default['sort_by'];
     $sort_order = (isset($_GET['sort_order']) && (strtolower($_GET['sort_order']) === 'asc')) ? 'asc' : 'desc';
 
     // determine filter params
-    $filter_by = isset($_GET['filter_by']) ? $_GET['filter_by'] : $filter;
+    $filter_by = isset($_GET['filter_by']) ? $_GET['filter_by'] : $default['filter_by'];
 
     // fetch leads for current page
     list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by);
@@ -118,18 +269,21 @@ class LeadsController extends ApplicationController
       $current_page = (int)$total_pages;
     }
 
-    $url_params_map = [
-      'sort_order' => $sort_order,
-      'sort_by' => $sort_by,
+    $search_params = [
       'leads_per_page' => $leads_per_page,
+      'sort_by' => $sort_by,
+      'sort_order' => $sort_order,
+      'page' => $current_page,
+      'total_pages' => $total_pages,
+      'filter_by' => $filter_by,
     ];
 
-    $url_params = http_build_query($url_params_map);
 
+    $this->set_page_info(['title' => $page_title]);
     $this->set_object('leads', $leads);
-    $this->set_object('current_page', $current_page);
-    $this->set_object('total_pages', (int)$total_pages);
-    $this->set_object('url_params', $url_params);
+    $this->set_object('lead_category', $lead_category);
+    $this->set_object('lead_area', $lead_area);
+    $this->set_object('search_params', $search_params);
     $this->render($view);
   }
 
@@ -140,7 +294,7 @@ class LeadsController extends ApplicationController
     $required_fields = $files_params['required_fields'] ?? [];
 
     // check directory existence
-    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\raw\\";
+    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\source\\";
     if (!is_dir($directory)) {
       $dir_permissions = 0755;
       $recursive = true;
@@ -179,11 +333,11 @@ class LeadsController extends ApplicationController
       $date = new DateTime(); // system's default timezone
       $formatted_date = $date->format('Y-m-d_Hisu');
       $trimmed_file_name = str_replace(".csv", "", $file_name);
-      $file_destination = $directory . $formatted_date . "_leads-raw (" . $trimmed_file_name . ").csv";
+      $file_destination = $directory . $formatted_date . "_leads-source (" . $trimmed_file_name . ").csv";
 
       // write content to file
       if (!(file_put_contents($file_destination, $file_content))) {
-        $error_messages[] = "Failed to save raw file: $file_name";
+        $error_messages[] = "Failed to save source file: $file_name";
         continue;
       }
 
