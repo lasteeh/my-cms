@@ -221,8 +221,23 @@ class LeadsController extends ApplicationController
 
   public function export()
   {
+    $error_messages = [];
+    $alert_messages = [];
+
+    $origin_url = $_POST['origin_url'] ?? '/dashboard/leads';
     $area = $this->get_route_param('area') ?? "";
     $category = $this->get_route_param('category') ?? "";
+
+    list($exported_leads, $errors) = (new Lead)->export_leads($area, $category);
+    $error_messages = array_merge($error_messages, $errors);
+
+    if (is_array($exported_leads)) {
+      $exported_leads_count = count($exported_leads);
+      $alert_messages[] = "{$exported_leads_count} leads exported.";
+    }
+
+
+    $this->redirect($origin_url, ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
   private function list(array $options = [], array $filters = [])

@@ -126,9 +126,16 @@ switch ($lead_category) {
     HTML;
     break;
   case "absentee_owner":
+  case "expired":
+  case "frbo":
+  case "fsbo":
     if (!empty($lead_area)) {
+      $export_link = $this->get_url("/dashboard/leads/export/{$lead_area}/{$lead_category}");
       $action_html = <<<HTML
-        <span>Export</span>
+        <form action="$export_link" method="post">
+          <input type="hidden" name="origin_url" value="$current_url">
+          <button type="submit">Export</button>
+        </form>
       HTML;
     }
     break;

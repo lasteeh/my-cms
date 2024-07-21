@@ -320,6 +320,108 @@ class Lead extends Application_Record
     return [$assigned_leads, $error_messages];
   }
 
+  public function export_leads(string $area, string $category): array
+  {
+    $fetch_conditions = [
+      'import_lead' => true,
+    ];
+    $default_columns = [
+      'vortex_id' => 'Vortex ID',
+      'listing_status' => 'Listing Status',
+      'name' => 'Full Name',
+      'phone' => 'Cell Phone',
+      'phone_2' => 'Home Phone',
+      'phone_3' => 'Work Phone',
+      'phone_4' => 'Phone 4',
+      'phone_5' => 'Phone 5',
+      'phone_6' => 'Phone 6',
+      'phone_7' => 'Phone 7',
+      'email' => 'Email',
+      'email_2' => 'Email 2',
+      'email_3' => 'Email 3',
+      'email_4' => 'Email 4',
+      'email_5' => 'Email 5',
+      'email_6' => 'Email 6',
+      'email_7' => 'Email 7',
+      'mailing_street' => 'Street Address',
+      'mailing_city' => 'City',
+      'mailing_state' => 'State',
+      'mailing_zip' => 'Zip/Postal Code',
+      'list_price' => 'List Price', // process price format
+      'status_date' => 'Register Date', // process date format
+      'mls_fsbo_id' => 'MLS/FSBO ID',
+      'absentee_owner' => 'Absentee Owner', // process bool yes or no
+      'property_address' => 'Property Address',
+      'property_city' => 'Property City',
+      'property_state' => 'Property State',
+      'property_zip' => 'Property Zip',
+      'property_county' => 'Property County', // process value
+      'source' => 'Source',
+      'pipeline' => 'Pipeline',
+      'buyer_seller' => 'Buyer/Seller',
+      'agent_assigned' => 'Agent Assigned',
+    ];
+
+    switch ($area) {
+      case "montgomery":
+        $fetch_conditions['assigned_area'] = $area;
+        if (!empty($category)) {
+          switch ($category) {
+            case "absentee_owner":
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['absentee_owner'] = true;
+              break;
+            case "expired":
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['absentee_owner'] = false;
+              break;
+            case "frbo":
+              $fetch_conditions['listing_status'] = "FRBO";
+              unset($default_columns['listing_status']);
+              break;
+            case "fsbo":
+              $fetch_conditions['listing_status'] = "FSBO";
+              unset($default_columns['listing_status']);
+              break;
+          }
+        }
+        break;
+      case "auburn":
+        $fetch_conditions['assigned_area'] = $area;
+        if (!empty($category)) {
+          switch ($category) {
+            case "absentee_owner":
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['absentee_owner'] = true;
+              break;
+            case "expired":
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['absentee_owner'] = false;
+              break;
+            case "frbo":
+              $fetch_conditions['listing_status'] = "FRBO";
+              unset($default_columns['listing_status']);
+              break;
+            case "fsbo":
+              $fetch_conditions['listing_status'] = "FSBO";
+              unset($default_columns['listing_status']);
+              break;
+          }
+        }
+        break;
+    }
+
+    $returned_columns = [];
+    foreach ($default_columns as $column => $label) {
+      $returned_columns[] = $column;
+    }
+
+    $leads_to_be_processed = $this->fetch_by($fetch_conditions, $returned_columns);
+
+    // WIP: EXPORT leads
+    exit;
+  }
+
   private function standardize_street_address(string $address, array $suffix_lookup): null|string
   {
     if (empty($address)) return null;
