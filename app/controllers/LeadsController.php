@@ -28,13 +28,13 @@ class LeadsController extends ApplicationController
       case 'absentee_owner':
         $this->list(
           ['title' => "Absentee Owners", 'lead_category' => "absentee_owner"],
-          ['absentee_owner' => true, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market']],
+          ['absentee_owner' => true, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market', 'Cancelled']],
         );
         break;
       case 'expired':
         $this->list(
           ['title' => "Expireds", 'lead_category' => "expired"],
-          ['absentee_owner' => false, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market']],
+          ['absentee_owner' => false, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market', 'Cancelled']],
         );
         break;
       case 'frbo':
@@ -64,14 +64,14 @@ class LeadsController extends ApplicationController
           case "absentee_owner":
             $options['title'] = "Montgomery - Expired Absentee Owners";
 
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
             $filters['absentee_owner'] = true;
             $filters['import_lead'] = true;
             break;
           case "expired":
             $options['title'] = "Montgomery - Expireds";
 
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
             $filters['absentee_owner'] = false;
             $filters['import_lead'] = true;
             break;
@@ -109,14 +109,14 @@ class LeadsController extends ApplicationController
           case "absentee_owner":
             $options['title'] = "Auburn - Expired Absentee Owners";
 
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
             $filters['absentee_owner'] = true;
             $filters['import_lead'] = true;
             break;
           case "expired":
             $options['title'] = "Auburn - Expireds";
 
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
             $filters['absentee_owner'] = false;
             $filters['import_lead'] = true;
             break;

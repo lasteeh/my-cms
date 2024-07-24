@@ -380,11 +380,11 @@ class Lead extends Application_Record
         if (!empty($category)) {
           switch ($category) {
             case "absentee_owner":
-              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
               $fetch_conditions['absentee_owner'] = true;
               break;
             case "expired":
-              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
+              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
               $fetch_conditions['absentee_owner'] = false;
               break;
             case "frbo":
