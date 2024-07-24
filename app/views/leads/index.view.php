@@ -16,20 +16,136 @@ $domain_name = $_SERVER['HTTP_HOST'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $current_url = str_replace(self::$ROOT_URL, "", $protocol . $domain_name . $request_uri);
 
+$assign_link = $this->get_url("/dashboard/leads/assign");
+
+function export_action_component($export_link, $current_url)
+{
+  $html = <<<HTML
+    <form action="$export_link" method="post">
+      <input type="hidden" name="origin_url" value="$current_url">
+      <button type="submit">Export</button>
+    </form>
+  HTML;
+  return $html;
+}
+
+function add_city_action_component($add_city_link, $current_url, $county_options)
+{
+  $html = <<<HTML
+    <form id="add_city" action="$add_city_link" method="post" style="display: flex; width: min(600px, 100%); max-width: max-content; margin-inline-start: auto;">
+      <div style="display: flex; flex-flow: row wrap; ">
+      <input type="hidden" name="origin_url" value="$current_url">
+      <input type="text" name="name" placeholder="City" required>
+      <select name="state" required>
+        <option value="" disabled>Select State</option>
+        <option value="Alabama" selected>AL</option>
+        <option value="Alaska">AK</option>
+        <option value="Arizona">AZ</option>
+        <option value="Arkansas">AR</option>
+        <option value="California">CA</option>
+        <option value="Colorado">CO</option>
+        <option value="Connecticut">CT</option>
+        <option value="Delaware">DE</option>
+        <option value="Florida">FL</option>
+        <option value="Georgia">GA</option>
+        <option value="Hawaii">HI</option>
+        <option value="Idaho">ID</option>
+        <option value="Illinois">IL</option>
+        <option value="Indiana">IN</option>
+        <option value="Iowa">IA</option>
+        <option value="Kansas">KS</option>
+        <option value="Kentucky">KY</option>
+        <option value="Louisiana">LA</option>
+        <option value="Maine">ME</option>
+        <option value="Maryland">MD</option>
+        <option value="Massachusetts">MA</option>
+        <option value="Michigan">MI</option>
+        <option value="Minnesota">MN</option>
+        <option value="Mississippi">MS</option>
+        <option value="Missouri">MO</option>
+        <option value="Montana">MT</option>
+        <option value="Nebraska">NE</option>
+        <option value="Nevada">NV</option>
+        <option value="New Hampshire">NH</option>
+        <option value="New Jersey">NJ</option>
+        <option value="New Mexico">NM</option>
+        <option value="New York">NY</option>
+        <option value="North Carolina">NC</option>
+        <option value="North Dakota">ND</option>
+        <option value="Ohio">OH</option>
+        <option value="Oklahoma">OK</option>
+        <option value="Oregon">OR</option>
+        <option value="Pennsylvania">PA</option>
+        <option value="Rhode Island">RI</option>
+        <option value="South Carolina">SC</option>
+        <option value="South Dakota">SD</option>
+        <option value="Tennessee">TN</option>
+        <option value="Texas">TX</option>
+        <option value="Utah">UT</option>
+        <option value="Vermont">VT</option>
+        <option value="Virginia">VA</option>
+        <option value="Washington">WA</option>
+        <option value="West Virginia">WV</option>
+        <option value="Wisconsin">WI</option>
+        <option value="Wyoming">WY</option>
+      </select>
+
+      <input type="text" name="zip_codes" value="" placeholder="Zip Codes" required>
+      <select name="county_id" required>
+        <option value="" disabled selected>Select County</option>
+        $county_options
+      </select>
+
+      <input type="text" name="latitude" placeholder="Latitude">
+      <input type="text" name="longitude" placeholder="Longitude">
+
+      <input type="text" name="bound_nw" placeholder="Bound NW">
+      <input type="text" name="bound_se" placeholder="Bound SW">
+
+      <input type="text" name="viewport_nw" placeholder="Viewport NW">
+      <input type="text" name="viewport_se" placeholder="Viewport SE">
+      </div>
+      <button style="display: inline-block;" type="submit">Add City</button>
+    </form>
+  HTML;
+
+  return $html;
+}
+
+function upload_action_component($form_action_link, $current_url)
+{
+  $html = <<<HTML
+      <form action="$form_action_link" method="post" enctype="multipart/form-data" style="max-width: max-content; margin-inline-start: auto;">
+        <input type="hidden" name="origin_url" value="$current_url">
+        <input type="file" name="leads[]" accept=".csv" autocomplete="off" required multiple>
+        <button type="submit">Upload</button>
+      </form>
+  HTML;
+
+  return $html;
+}
+
+function assign_action_component($assign_link, $current_url)
+{
+  $html = <<<HTML
+    <form action="$assign_link" method="post" style="max-width: max-content;">
+      <input type="hidden" name="origin_url" value="$current_url">
+      <button type="submit" style="padding: 0.25em 0.75em;">Assign</button>
+    </form>
+  HTML;
+
+  return $html;
+}
+
 $action_html = "";
 switch ($lead_category) {
   case '':
     $form_action_link = $this->get_url('/dashboard/leads/batch/add');
 
-    $action_html = <<<HTML
-      <form action="$form_action_link" method="post" enctype="multipart/form-data" style="max-width: max-content; margin-inline-start: auto;">
-        <input type="file" name="leads[]" accept=".csv" autocomplete="off" required multiple>
-        <button type="submit">Upload</button>
-      </form>
-    HTML;
+    $action_html = assign_action_component($assign_link, $current_url);
+    $action_html .= upload_action_component($form_action_link, $current_url);
     break;
   case 'unassigned':
-    $assign_link = $this->get_url("/dashboard/leads/assign?category=unassigned");
     $add_city_link = $this->get_url('/dashboard/cities');
 
     $counties = $this->get_object("counties");
@@ -42,88 +158,17 @@ switch ($lead_category) {
       HTML;
     }
 
+    $assign_button = assign_action_component($assign_link, $current_url);
+
     $action_html = <<<HTML
         <div style="display: flex; flex-flow: column nowrap;">
-        <a style="margin-inline-end: auto;" href="$assign_link">Assign Leads</a>
-        <a target="_blank" href="https://developers.google.com/maps/documentation/geocoding/overview">Google Geocoding API</a>
-        <a target="_blank" href="https://tools.usps.com/zip-code-lookup.htm?bycitystate">ZIP Code Lookup | USPS</a>
+          <a target="_blank" href="https://developers.google.com/maps/documentation/geocoding/overview">Google Geocoding API</a>
+          <a style="margin-block-end: 1em;" target="_blank" href="https://tools.usps.com/zip-code-lookup.htm?bycitystate">ZIP Code Lookup | USPS</a>
+          $assign_button 
         </div>
-        <form id="add_city" action="$add_city_link" method="post" style="display: flex; width: min(600px, 100%); max-width: max-content; margin-inline-start: auto;">
-          <div style="display: flex; flex-flow: row wrap; ">
-          <input type="hidden" name="origin_url" value="$current_url">
-          <input type="text" name="name" placeholder="City" required>
-          <select name="state" required>
-            <option value="" disabled>Select State</option>
-            <option value="Alabama" selected>AL</option>
-            <option value="Alaska">AK</option>
-            <option value="Arizona">AZ</option>
-            <option value="Arkansas">AR</option>
-            <option value="California">CA</option>
-            <option value="Colorado">CO</option>
-            <option value="Connecticut">CT</option>
-            <option value="Delaware">DE</option>
-            <option value="Florida">FL</option>
-            <option value="Georgia">GA</option>
-            <option value="Hawaii">HI</option>
-            <option value="Idaho">ID</option>
-            <option value="Illinois">IL</option>
-            <option value="Indiana">IN</option>
-            <option value="Iowa">IA</option>
-            <option value="Kansas">KS</option>
-            <option value="Kentucky">KY</option>
-            <option value="Louisiana">LA</option>
-            <option value="Maine">ME</option>
-            <option value="Maryland">MD</option>
-            <option value="Massachusetts">MA</option>
-            <option value="Michigan">MI</option>
-            <option value="Minnesota">MN</option>
-            <option value="Mississippi">MS</option>
-            <option value="Missouri">MO</option>
-            <option value="Montana">MT</option>
-            <option value="Nebraska">NE</option>
-            <option value="Nevada">NV</option>
-            <option value="New Hampshire">NH</option>
-            <option value="New Jersey">NJ</option>
-            <option value="New Mexico">NM</option>
-            <option value="New York">NY</option>
-            <option value="North Carolina">NC</option>
-            <option value="North Dakota">ND</option>
-            <option value="Ohio">OH</option>
-            <option value="Oklahoma">OK</option>
-            <option value="Oregon">OR</option>
-            <option value="Pennsylvania">PA</option>
-            <option value="Rhode Island">RI</option>
-            <option value="South Carolina">SC</option>
-            <option value="South Dakota">SD</option>
-            <option value="Tennessee">TN</option>
-            <option value="Texas">TX</option>
-            <option value="Utah">UT</option>
-            <option value="Vermont">VT</option>
-            <option value="Virginia">VA</option>
-            <option value="Washington">WA</option>
-            <option value="West Virginia">WV</option>
-            <option value="Wisconsin">WI</option>
-            <option value="Wyoming">WY</option>
-          </select>
-
-          <input type="text" name="zip_codes" value="" placeholder="Zip Codes" required>
-          <select name="county_id" required>
-            <option value="" disabled selected>Select County</option>
-            $county_options
-          </select>
-
-          <input type="text" name="latitude" placeholder="Latitude">
-          <input type="text" name="longitude" placeholder="Longitude">
-
-          <input type="text" name="bound_nw" placeholder="Bound NW">
-          <input type="text" name="bound_se" placeholder="Bound SW">
-
-          <input type="text" name="viewport_nw" placeholder="Viewport NW">
-          <input type="text" name="viewport_se" placeholder="Viewport SE">
-          </div>
-          <button style="display: inline-block;" type="submit">Add City</button>
-        </form>
     HTML;
+
+    $action_html .= add_city_action_component($add_city_link, $current_url, $county_options);
     break;
   case "absentee_owner":
   case "expired":
@@ -131,12 +176,8 @@ switch ($lead_category) {
   case "fsbo":
     if (!empty($lead_area)) {
       $export_link = $this->get_url("/dashboard/leads/export/{$lead_area}/{$lead_category}");
-      $action_html = <<<HTML
-        <form action="$export_link" method="post">
-          <input type="hidden" name="origin_url" value="$current_url">
-          <button type="submit">Export</button>
-        </form>
-      HTML;
+      $action_html = assign_action_component($assign_link, $current_url);
+      $action_html .= export_action_component($export_link, $current_url);
     }
     break;
 }
@@ -322,9 +363,9 @@ if ($alerts) {  ?>
 }
 ?>
 
-<h1><?php $this->page_info('title'); ?></h1>
+<h1 style="margin-block-end: 0.5em;"><?php $this->page_info('title'); ?></h1>
 
-<div class="actions" style="display: flex; flex-flow: row wrap; align-items: end; justify-content: flex-end; gap: 1em;">
+<div class="actions" style="display: flex; flex-flow: row wrap; align-items: end; justify-content: flex-start; gap: 1em;">
   <?= $action_html; ?>
 </div>
 

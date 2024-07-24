@@ -15,94 +15,112 @@ if ($errors) {  ?>
 }
 ?>
 
-<h1>Standardized City Details</h1>
+<h1 style="margin-block-end: 0.5em;">Standardized City Details</h1>
 
-<form action="<?php $this->url('/dashboard/cities'); ?>" method="post" style="max-width: max-content; margin-block-end: 1em; margin-inline-start: auto;">
-  <input type="text" name="name" placeholder="City" required>
-  <select name="state" required>
-    <option value="" disabled>Select State</option>
-    <option value="Alabama" selected>AL</option>
-    <option value="Alaska">AK</option>
-    <option value="Arizona">AZ</option>
-    <option value="Arkansas">AR</option>
-    <option value="California">CA</option>
-    <option value="Colorado">CO</option>
-    <option value="Connecticut">CT</option>
-    <option value="Delaware">DE</option>
-    <option value="Florida">FL</option>
-    <option value="Georgia">GA</option>
-    <option value="Hawaii">HI</option>
-    <option value="Idaho">ID</option>
-    <option value="Illinois">IL</option>
-    <option value="Indiana">IN</option>
-    <option value="Iowa">IA</option>
-    <option value="Kansas">KS</option>
-    <option value="Kentucky">KY</option>
-    <option value="Louisiana">LA</option>
-    <option value="Maine">ME</option>
-    <option value="Maryland">MD</option>
-    <option value="Massachusetts">MA</option>
-    <option value="Michigan">MI</option>
-    <option value="Minnesota">MN</option>
-    <option value="Mississippi">MS</option>
-    <option value="Missouri">MO</option>
-    <option value="Montana">MT</option>
-    <option value="Nebraska">NE</option>
-    <option value="Nevada">NV</option>
-    <option value="New Hampshire">NH</option>
-    <option value="New Jersey">NJ</option>
-    <option value="New Mexico">NM</option>
-    <option value="New York">NY</option>
-    <option value="North Carolina">NC</option>
-    <option value="North Dakota">ND</option>
-    <option value="Ohio">OH</option>
-    <option value="Oklahoma">OK</option>
-    <option value="Oregon">OR</option>
-    <option value="Pennsylvania">PA</option>
-    <option value="Rhode Island">RI</option>
-    <option value="South Carolina">SC</option>
-    <option value="South Dakota">SD</option>
-    <option value="Tennessee">TN</option>
-    <option value="Texas">TX</option>
-    <option value="Utah">UT</option>
-    <option value="Vermont">VT</option>
-    <option value="Virginia">VA</option>
-    <option value="Washington">WA</option>
-    <option value="West Virginia">WV</option>
-    <option value="Wisconsin">WI</option>
-    <option value="Wyoming">WY</option>
-  </select>
-  <br />
-  <input type="text" name="zip_codes" value="" placeholder="Zip Codes" required>
-  <select name="county_id" required>
-    <option value="" disabled selected>Select County</option>
-    <?php
-    $counties = $this->get_object("counties");
 
-    foreach ($counties as $county) {
-      $county_name = $county['name'];
-      $county_id = $county['id'];
-      $option = <<<HTML
+<div style="display: flex; flex-flow: row wrap; align-items: end; justify-content: flex-start; gap: 1em; margin-block-end: 1em;">
+  <div style="display: flex; flex-flow: column nowrap;">
+    <a target="_blank" href="https://developers.google.com/maps/documentation/geocoding/overview">Google Geocoding API</a>
+    <a target="_blank" href="https://tools.usps.com/zip-code-lookup.htm?bycitystate">ZIP Code Lookup | USPS</a>
+  </div>
+  <form id="add_city" action="<?php $this->url('/dashboard/cities'); ?>" method="post" style="display: flex; width: min(600px, 100%); max-width: max-content; margin-inline-start: auto;">
+    <div style="display: flex; flex-flow: row wrap; ">
+      <input type="text" name="name" placeholder="City" required>
+      <select name="state" required>
+        <option value="" disabled>Select State</option>
+        <option value="Alabama" selected>AL</option>
+        <option value="Alaska">AK</option>
+        <option value="Arizona">AZ</option>
+        <option value="Arkansas">AR</option>
+        <option value="California">CA</option>
+        <option value="Colorado">CO</option>
+        <option value="Connecticut">CT</option>
+        <option value="Delaware">DE</option>
+        <option value="Florida">FL</option>
+        <option value="Georgia">GA</option>
+        <option value="Hawaii">HI</option>
+        <option value="Idaho">ID</option>
+        <option value="Illinois">IL</option>
+        <option value="Indiana">IN</option>
+        <option value="Iowa">IA</option>
+        <option value="Kansas">KS</option>
+        <option value="Kentucky">KY</option>
+        <option value="Louisiana">LA</option>
+        <option value="Maine">ME</option>
+        <option value="Maryland">MD</option>
+        <option value="Massachusetts">MA</option>
+        <option value="Michigan">MI</option>
+        <option value="Minnesota">MN</option>
+        <option value="Mississippi">MS</option>
+        <option value="Missouri">MO</option>
+        <option value="Montana">MT</option>
+        <option value="Nebraska">NE</option>
+        <option value="Nevada">NV</option>
+        <option value="New Hampshire">NH</option>
+        <option value="New Jersey">NJ</option>
+        <option value="New Mexico">NM</option>
+        <option value="New York">NY</option>
+        <option value="North Carolina">NC</option>
+        <option value="North Dakota">ND</option>
+        <option value="Ohio">OH</option>
+        <option value="Oklahoma">OK</option>
+        <option value="Oregon">OR</option>
+        <option value="Pennsylvania">PA</option>
+        <option value="Rhode Island">RI</option>
+        <option value="South Carolina">SC</option>
+        <option value="South Dakota">SD</option>
+        <option value="Tennessee">TN</option>
+        <option value="Texas">TX</option>
+        <option value="Utah">UT</option>
+        <option value="Vermont">VT</option>
+        <option value="Virginia">VA</option>
+        <option value="Washington">WA</option>
+        <option value="West Virginia">WV</option>
+        <option value="Wisconsin">WI</option>
+        <option value="Wyoming">WY</option>
+      </select>
+      <br />
+      <input type="text" name="zip_codes" value="" placeholder="Zip Codes" required>
+      <select name="county_id" required>
+        <option value="" disabled selected>Select County</option>
+        <?php
+        $counties = $this->get_object("counties");
+
+        foreach ($counties as $county) {
+          $county_name = $county['name'];
+          $county_id = $county['id'];
+          $option = <<<HTML
           <option value="$county_id">$county_name</option>
         HTML;
 
-      echo $option;
-    }
-    ?>
-  </select>
-  <br />
-  <input type="text" name="latitude" placeholder="Latitude">
-  <input type="text" name="longitude" placeholder="Longitude">
-  <br />
-  <input type="text" name="bound_nw" placeholder="Bound NW">
-  <input type="text" name="bound_se" placeholder="Bound SW">
-  <br />
-  <input type="text" name="viewport_nw" placeholder="Viewport NW">
-  <input type="text" name="viewport_se" placeholder="Viewport SE">
-  <button type="submit">Add City</button>
-</form>
+          echo $option;
+        }
+        ?>
+      </select>
+      <br />
+      <input type="text" name="latitude" placeholder="Latitude">
+      <input type="text" name="longitude" placeholder="Longitude">
+      <br />
+      <input type="text" name="bound_nw" placeholder="Bound NW">
+      <input type="text" name="bound_se" placeholder="Bound SW">
+      <br />
+      <input type="text" name="viewport_nw" placeholder="Viewport NW">
+      <input type="text" name="viewport_se" placeholder="Viewport SE">
+    </div>
+    <button type="submit">Add City</button>
+  </form>
+</div>
 
 <style>
+  form#add_city>div>* {
+    flex: 1 1 auto;
+    padding: 0.25em;
+  }
+
+  form#add_city>button {
+    padding: 0.25em 0.5em;
+  }
+
   table {
     position: relative;
     text-align: left;

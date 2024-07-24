@@ -16,10 +16,18 @@
   <main>
     <?php include $view_file; ?>
   </main>
-  <aside>
+  <aside style="resize: horizontal;">
     <nav style="height: 100%;">
       <menu style="display: flex; flex-flow: column nowrap; height: 100%;">
         <li style="margin-block-end: 2em;"><a href="<?php $this->url('/dashboard'); ?>">Dashboard</a></li>
+
+        <li><a target="_blank" href="https://matrix.lcar.mlsmatrix.com/Matrix/Default.aspx?c=AAEAAAD*****AQAAAAAAAAARAQAAAEQAAAAGAgAAAAQzNTM4DUAGAwAAAAbDh8K4NHMNAgs)&f=">LCAR® Saved Searches</a></li>
+        <li><a target="_blank" href="https://matrix.alamls.net/Matrix/Default.aspx?c=AAEAAAD*****AQAAAAAAAAARAQAAAEQAAAAGAgAAAAQzMTQ3DUAGAwAAAAfDhcO0wosqDQIL&f=">MAAR® Saved Searches</a></li>
+        <li style="margin-block-end: 1em;"><a target="_blank" href="https://vortex.theredx.com/">Vortex</a></li>
+
+        <li><a target="_blank" href="https://www.homesearchinauburn.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Auburn CINC Site - Import</a></li>
+        <li style="margin-block-end: 1em;"><a target="_blank" href="https://www.searchhomesinmontgomery.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Montgomery CINC Site - Import</a></li>
+
         <li style="margin-block-end: 1em;"><a href="<?php $this->url('/dashboard/cities'); ?>">Standardized City Details</a></li>
 
         <li style="margin-block-end: 1em;">
@@ -42,7 +50,7 @@
             <li><a href="<?php $this->url('/dashboard/leads/montgomery/fsbo'); ?>">FSBO</a></li>
           </ul>
         </li>
-        <li>
+        <li style="margin-block-end: 1em;">
           <a href="<?php $this->url('/dashboard/leads/auburn'); ?>">Auburn</a>
           <ul style="list-style: none; padding-inline-start: 1em;">
             <li><a href="<?php $this->url('/dashboard/leads/auburn/absentee_owner'); ?>">Absentee Owners</a></li>

@@ -227,6 +227,7 @@ class Lead extends Application_Record
 
     $leads_to_be_updated = [];
     $error_messages = [];
+    $assigned_leads = [];
 
     // process each lead
     foreach ($unassigned_leads as $lead) {
@@ -298,13 +299,16 @@ class Lead extends Application_Record
 
       if ($county_checked && $source_checked && $pipeline_checked & $buyer_seller_checked && $agent_assigned_checked) {
         $lead['lead_assigned'] = true;
+
+        // count as assigned lead
+        $assigned_leads[] = $lead['vortex_id'];
       }
 
       if ($county_checked && empty($lead['assigned_area'])) {
         $lead['import_lead'] = false;
       }
 
-      // inlcude lead to be assigned
+      // inlcude lead to be updated
       $leads_to_be_updated[] = $lead;
     }
 
@@ -315,16 +319,22 @@ class Lead extends Application_Record
       return [null, $error_messages];
     }
 
-    $assigned_leads = $this->check_column_value($updated_leads, ['lead_assigned' => true], ['unique_by' => 'vortex_id', 'returning' => ['vortex_id']]);
+    // $assigned_leads = $this->check_column_value($updated_leads, ['lead_assigned' => true], ['unique_by' => 'vortex_id', 'returning' => ['vortex_id']]);
 
     return [$assigned_leads, $error_messages];
   }
 
   public function export_leads(string $area, string $category): array
   {
+    $exported_data = [];
+    $error_messages = [];
+
+    // only fetch leads to import
     $fetch_conditions = [
       'import_lead' => true,
     ];
+
+    // define header rename map
     $default_columns = [
       'vortex_id' => 'Vortex ID',
       'listing_status' => 'Listing Status',
@@ -362,30 +372,9 @@ class Lead extends Application_Record
       'agent_assigned' => 'Agent Assigned',
     ];
 
+    // define leads and columns to be fetched per lead category
     switch ($area) {
       case "montgomery":
-        $fetch_conditions['assigned_area'] = $area;
-        if (!empty($category)) {
-          switch ($category) {
-            case "absentee_owner":
-              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
-              $fetch_conditions['absentee_owner'] = true;
-              break;
-            case "expired":
-              $fetch_conditions['listing_status'] = ['Expired', 'Withdrawn', 'Off Market'];
-              $fetch_conditions['absentee_owner'] = false;
-              break;
-            case "frbo":
-              $fetch_conditions['listing_status'] = "FRBO";
-              unset($default_columns['listing_status']);
-              break;
-            case "fsbo":
-              $fetch_conditions['listing_status'] = "FSBO";
-              unset($default_columns['listing_status']);
-              break;
-          }
-        }
-        break;
       case "auburn":
         $fetch_conditions['assigned_area'] = $area;
         if (!empty($category)) {
@@ -411,15 +400,182 @@ class Lead extends Application_Record
         break;
     }
 
+    // prepare columns to be fetched based on array definition
     $returned_columns = [];
     foreach ($default_columns as $column => $label) {
       $returned_columns[] = $column;
     }
 
+    // fetch leads
     $leads_to_be_processed = $this->fetch_by($fetch_conditions, $returned_columns);
+    $leads_to_update = $leads_to_be_processed;
 
-    // WIP: EXPORT leads
-    exit;
+    // define removeable columns if empty
+    $columns_to_check_if_empty = [
+      'phone_4', 'phone_5', 'phone_6', 'phone_7', 'email_2', 'email_3', 'email_4', 'email_5', 'email_6', 'email_7',
+    ];
+    // scan empty columns and define in an array
+    $columns_to_remove = [];
+    foreach ($columns_to_check_if_empty as $column) {
+      $is_empty = true;
+
+      foreach ($leads_to_be_processed as $lead) {
+        if ($lead[$column] !== null) {
+          $is_empty = false;
+          break;
+        }
+      }
+
+      if ($is_empty) {
+        $columns_to_remove[] = $column;
+      }
+    }
+
+    // remove empty columns from each lead
+    foreach ($leads_to_be_processed as &$lead) {
+      foreach ($columns_to_remove as $column) {
+        unset($lead[$column]);
+      }
+    }
+
+    // fetch counties
+    $counties = (new County)->all();
+    // create county id name map
+    $county_map = [];
+    foreach ($counties as $county) {
+      $county_map[$county['id']] = $county['name'];
+    }
+
+    // format values
+    foreach ($leads_to_be_processed as $lead) {
+      // format list_price
+      if (isset($lead['list_price'])) {
+        $formatted_price = (int)$lead['list_price'];
+        $lead['list_price'] = $formatted_price;
+      }
+
+      // format status_date
+      if (isset($lead['status_date'])) {
+        $formatted_date = DateTime::createFromFormat('Y-m-d', $lead['status_date']);
+        if ($formatted_date) {
+          $lead['status_date'] = $formatted_date->format('m-d-Y');
+        }
+      }
+
+      // format absentee_owner
+      if (isset($lead['absentee_owner'])) {
+        $absentee_owner_value = $lead['absentee_owner'] ? "Yes" : "No";
+        $lead['absentee_owner'] = $absentee_owner_value;
+      }
+
+      // format property_county
+      if (isset($lead['property_county']) && isset($county_map[$lead['property_county']])) {
+        $county_name = $county_map[$lead['property_county']];
+        $lead['property_county'] = $county_name;
+      }
+
+      // format other column values here
+    }
+    unset($lead);
+
+    // prepare csv content in memory
+    $file_output = fopen('php://temp', 'w+');
+    if ($file_output === false) {
+      $error_messages[] = "Failed to open temporary file.";
+      return [[], $error_messages];
+    }
+
+    // get headers from leads keys of the first lead
+    $headers = array_keys($leads_to_be_processed[0]);
+    // rename headers
+    foreach ($headers as &$header) {
+      if (isset($default_columns[$header])) {
+        $header = $default_columns[$header];
+      }
+    }
+    unset($header);
+    // write headers to the csv file
+    fputcsv($file_output, $headers);
+    // write each leads to the csv file
+    foreach ($leads_to_be_processed as $lead) {
+      fputcsv($file_output, $lead);
+    }
+    unset($lead);
+
+    // move to the beginning of the stream
+    rewind($file_output);
+
+
+    // define file path and name
+    $export_directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\" . $category . "\\";
+    $export_date = new DateTime();
+    $formatted_export_date = $export_date->format("Ymd");
+    $leads_category = "";
+    switch ($category) {
+      case "absentee_owner":
+        $leads_category = "expireds-ao-{$area}";
+        break;
+      case "expired":
+        $leads_category = "expireds-{$area}";
+        break;
+      case "frbo":
+        $leads_category = "frbo-{$area}";
+        break;
+      case "fsbo":
+        $leads_category = "fsbo-{$area}";
+        break;
+    }
+    $file_name = "{$formatted_export_date}-{$leads_category}.csv";
+    $file_path = $export_directory . $file_name;
+
+    // check if directory exists
+    if (!is_dir($export_directory)) {
+      mkdir($export_directory, 0755, true);
+    }
+
+    // open file for writing
+    $file_saved = fopen($file_path, "w");
+
+    // check if file opened successfully
+    if ($file_saved === false) {
+      $error_messages[] = "Failed to save file: $file_name";
+      fclose($file_output);
+      return [[], $error_messages];
+    }
+
+    // write filie content to the file
+    rewind($file_output);
+    stream_copy_to_stream($file_output, $file_saved);
+
+    // close storage file
+    fclose($file_saved);
+
+    // add filepath to return object
+    $exported_data['file_path'] = $file_path;
+    $exported_data['file_name'] = $file_name;
+
+    // output the file content for download
+    // header('Content-Type: text/csv');
+    // header('Content-Disposition: attachment;filename="' . $file_name . '"');
+    // header('Cache-Control: max-age=0');
+    // rewind($file_output);
+    // fpassthru($file_output);
+    // close temporary file
+    // fclose($file_output);
+
+    // update import_lead column to false
+    foreach ($leads_to_update as &$lead) {
+      $lead['import_lead'] = false;
+    }
+    // write lead updates in database
+    $updated_leads = $this->update_all($leads_to_update, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
+
+    // add leads to return object
+    if (!empty($updated_leads)) {
+      $exported_data['leads'] = $updated_leads;
+    }
+
+    return [$exported_data, $error_messages];
   }
 
   private function standardize_street_address(string $address, array $suffix_lookup): null|string

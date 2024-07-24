@@ -92,7 +92,7 @@ return [
     'POST' => 'leads@batch_add',
   ],
   '/dashboard/leads/assign' => [
-    'GET' => 'leads@assign',
+    'POST' => 'leads@assign',
   ],
   '/dashboard/leads/:category' => [
     'GET' => 'leads@categorize',

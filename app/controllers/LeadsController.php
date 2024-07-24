@@ -162,16 +162,13 @@ class LeadsController extends ApplicationController
 
       if ($lead_count > 0) {
         $alert_messages[] = "{$lead_count} new leads found.";
-        $redirect_link = "/dashboard/leads/unassigned";
       } else {
         $error_messages[] = "No new leads found.";
-        $redirect_link = "/dashboard/leads";
       }
-
-      $this->redirect($redirect_link, ['errors' => $error_messages, 'alerts' => $alert_messages]);
-    } else {
-      $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
     }
+
+    $redirect_link = $_POST['origin_url'] ?? '/dashboard/leads';
+    $this->redirect($redirect_link, ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
   public function assign()
@@ -187,7 +184,8 @@ class LeadsController extends ApplicationController
       $alert_messages[] = "{$assigned_leads_count} leads assigned.";
     }
 
-    $this->redirect("/dashboard/leads/unassigned", ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    $redirect_link = $_POST['origin_url'] ?? "/dashboard/leads/unassigned";
+    $this->redirect($redirect_link, ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
   public function toggle()
@@ -228,14 +226,15 @@ class LeadsController extends ApplicationController
     $area = $this->get_route_param('area') ?? "";
     $category = $this->get_route_param('category') ?? "";
 
-    list($exported_leads, $errors) = (new Lead)->export_leads($area, $category);
+    list($exported_data, $errors) = (new Lead)->export_leads($area, $category);
     $error_messages = array_merge($error_messages, $errors);
 
-    if (is_array($exported_leads)) {
-      $exported_leads_count = count($exported_leads);
-      $alert_messages[] = "{$exported_leads_count} leads exported.";
+    if (!empty($exported_data)) {
+      if (isset($exported_data['leads'])) {
+        $exported_data_count = count($exported_data['leads']);
+        $alert_messages[] = "{$exported_data_count} leads exported.";
+      }
     }
-
 
     $this->redirect($origin_url, ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
