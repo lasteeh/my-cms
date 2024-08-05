@@ -566,4 +566,9 @@ return [
     'WI' => 'Wisconsin',
     'WY' => 'Wyoming'
   ],
+  'categories' => [
+    'expired' => ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'],
+    'frbo' => ['FRBO'],
+    'fsbo' => ['FSBO'],
+  ],
 ];

@@ -95,10 +95,10 @@ return [
     'POST' => 'leads@assign',
   ],
   '/dashboard/leads/:category' => [
-    'GET' => 'leads@categorize',
+    'GET' => 'leads@index',
   ],
-  '/dashboard/leads/:category/:sub_category' => [
-    'GET' => 'leads@categorize',
+  '/dashboard/leads/:category/:area' => [
+    'GET' => 'leads@index',
   ],
   '/dashboard/leads/toggle/:property/:id' => [
     'POST' => 'leads@toggle',

@@ -408,6 +408,11 @@ class Lead extends Application_Record
 
     // fetch leads
     $leads_to_be_processed = $this->fetch_by($fetch_conditions, $returned_columns);
+
+    if (empty($leads_to_be_processed)) {
+      $error_messages[] = "No leads to export.";
+      return [[], $error_messages];
+    };
     $leads_to_update = $leads_to_be_processed;
 
     // define removeable columns if empty

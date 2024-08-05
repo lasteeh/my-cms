@@ -11,137 +11,76 @@ class LeadsController extends ApplicationController
 {
   public function index()
   {
-    $this->list();
-  }
-  public function categorize()
-  {
     $category = $this->get_route_param('category') ?? '';
-    $sub_category = $this->get_route_param('sub_category') ?? '';
+    $category_listing_statuses = config('mrcleads.categories');
+    $area = $this->get_route_param('area') ?? '';
+
+    $leads_per_page = $_GET['leads_per_page'] ?? 100;
+    $sort_by = $_GET['sort_by'] ?? 'id';
+    $sort_order = $_GET['sort_order'] ?? 'desc';
+    $current_page = $_GET['page'] ?? 1;
+    $total_pages = $_GET['total_pages'] ?? 1;
+    $filter_by = [];
+
 
     switch ($category) {
       case 'unassigned':
-        $this->list(
-          ['title' => "Unassigned Leads", 'lead_category' => "unassigned"],
-          ['lead_assigned' => false, 'import_lead' => true],
-        );
+        $page_title = "Unassigned Leads";
+        $filter_by['lead_assigned'] = false;
         break;
       case 'absentee_owner':
-        $this->list(
-          ['title' => "Absentee Owners", 'lead_category' => "absentee_owner"],
-          ['absentee_owner' => true, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market', 'Cancelled']],
-        );
+        $page_title = "Absentee Owners";
+        $filter_by['absentee_owner'] = true;
+        $filter_by['listing_status'] = $category_listing_statuses['expired'];
         break;
       case 'expired':
-        $this->list(
-          ['title' => "Expireds", 'lead_category' => "expired"],
-          ['absentee_owner' => false, 'listing_status' => ['Expired', 'Withdrawn', 'Off Market', 'Cancelled']],
-        );
+        $page_title = "Expireds";
+        $filter_by['absentee_owner'] = false;
+        $filter_by['listing_status'] = $category_listing_statuses['expired'];
         break;
       case 'frbo':
-        $this->list(
-          ['title' => "FRBO", 'lead_category' => "frbo"],
-          ['listing_status' => 'FRBO'],
-        );
+        $page_title = "FRBO";
+        $filter_by['listing_status'] = $category_listing_statuses['frbo'];
         break;
       case 'fsbo':
-        $this->list(
-          ['title' => "FSBO", 'lead_category' => "fsbo"],
-          ['listing_status' => 'FSBO'],
-        );
+        $page_title = "FSBO";
+        $filter_by['listing_status'] = $category_listing_statuses['fsbo'];
         break;
-
-      case 'montgomery':
-        $filters = [
-          'assigned_area' => 'montgomery',
-        ];
-        $options = [
-          'title' => 'Montgomery',
-          'lead_area' => $category,
-          'lead_category' => $sub_category,
-        ];
-
-        switch ($sub_category) {
-          case "absentee_owner":
-            $options['title'] = "Montgomery - Expired Absentee Owners";
-
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
-            $filters['absentee_owner'] = true;
-            $filters['import_lead'] = true;
-            break;
-          case "expired":
-            $options['title'] = "Montgomery - Expireds";
-
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
-            $filters['absentee_owner'] = false;
-            $filters['import_lead'] = true;
-            break;
-          case "frbo":
-            $options['title'] = "Montgomery - FRBO";
-
-            $filters['listing_status'] = 'FRBO';
-            $filters['import_lead'] = true;
-            break;
-          case "fsbo":
-            $options['title'] = "Montgomery - FSBO";
-
-            $filters['listing_status'] = 'FSBO';
-            $filters['import_lead'] = true;
-            break;
-        }
-
-        $this->list(
-          $options,
-          $filters,
-        );
-        break;
-
-      case 'auburn':
-        $filters = [
-          'assigned_area' => 'auburn',
-        ];
-        $options = [
-          'title' => 'Auburn',
-          'lead_area' => $category,
-          'lead_category' => $sub_category,
-        ];
-
-        switch ($sub_category) {
-          case "absentee_owner":
-            $options['title'] = "Auburn - Expired Absentee Owners";
-
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
-            $filters['absentee_owner'] = true;
-            $filters['import_lead'] = true;
-            break;
-          case "expired":
-            $options['title'] = "Auburn - Expireds";
-
-            $filters['listing_status'] = ['Expired', 'Withdrawn', 'Off Market', 'Cancelled'];
-            $filters['absentee_owner'] = false;
-            $filters['import_lead'] = true;
-            break;
-          case "frbo":
-            $options['title'] = "Auburn - FRBO";
-
-            $filters['listing_status'] = 'FRBO';
-            $filters['import_lead'] = true;
-            break;
-          case "fsbo":
-            $options['title'] = "Auburn - FSBO";
-
-            $filters['listing_status'] = 'FSBO';
-            $filters['import_lead'] = true;
-            break;
-        }
-
-        $this->list(
-          $options,
-          $filters,
-        );
+      default:
+        $page_title = "Leads";
+        $filter_by = $_GET['filter_by'] ?? [];
         break;
     }
-  }
 
+    switch ($area) {
+      case 'montgomery':
+        $filter_by['assigned_area'] = 'montgomery';
+        break;
+      case 'auburn':
+        $filter_by['assigned_area'] = 'auburn';
+        break;
+      default:
+        break;
+    }
+
+    $leads = [];
+    $search_params = [
+      'leads_per_page' => (int)$leads_per_page,
+      'sort_by' => $sort_by,
+      'sort_order' => $sort_order,
+      'page' => (int)$current_page,
+      'total_pages' => (int)$total_pages,
+      'filter_by' => $filter_by,
+    ];
+
+    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by);
+    $search_params['total_pages'] = (int)$total_pages;
+
+    $this->set_page_info(['title' => $page_title]);
+    $this->set_object('leads', $leads);
+    $this->set_object('search_params', $search_params);
+    $this->render();
+  }
 
   public function batch_add()
   {
