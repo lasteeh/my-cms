@@ -3,6 +3,13 @@ $errors = $this->get_flash('errors');
 $alerts = $this->get_flash('alerts');
 $leads = $this->get_object('leads');
 $search_params = $this->get_object('search_params');
+
+var_dump($search_params);
+echo "<br>";
+echo "<br>";
+var_dump(http_build_query($search_params['filter_by']));
+
+var_dump($search_params['range']);
 ?>
 
 <style>
@@ -91,6 +98,44 @@ $search_params = $this->get_object('search_params');
   }
 </style>
 
+<div>
+  <form action="<?= $this->url("/dashboard/leads") ?>">
+
+    <ul>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="expired" value="Expired"><label for="expired">Expireds</label></li>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="withdrawn" value="Withdrawn"><label for="withdrawn">Withdrawn</label></li>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="off_market" value="Off Market"><label for="off_market">Off Market</label></li>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="cancelled" value="Cancelled"><label for="cancelled">Cancelled</label></li>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="frbo" value="FRBO"><label for="frbo">FRBO</label></li>
+      <li><input type="checkbox" name="filter_by[listing_status][]" id="fsbo" value="FSBO"><label for="fsbo">FSBO</label></li>
+    </ul>
+
+    <ul>
+      <li><input type="checkbox" name="filter_by[import_lead][]" id="import" value="1"><label for="import">Import</label></li>
+      <li><input type="checkbox" name="filter_by[import_lead][]" id="do_not_import" value="0"><label for="do_not_import">Do Not Import</label></li>
+    </ul>
+
+    <ul>
+      <li><input type="checkbox" name="filter_by[assigned_area][]" id="montgomery" value="montgomery"><label for="montgomery">Montgomery</label></li>
+      <li><input type="checkbox" name="filter_by[assigned_area][]" id="auburn" value="auburn"><label for="auburn">Auburn</label></li>
+    </ul>
+
+    <ul>
+      <li><input type="checkbox" name="filter_by[absentee_owner][]" id="absentee_owner" value="1"><label for="absentee_owner">Absentee Owner</label></li>
+    </ul>
+
+    <ul>
+      <li><input type="checkbox" name="filter_by[lead_assigned][]" id="assigned" value="1"><label for="assigned">Assigned</label></li>
+      <li><input type="checkbox" name="filter_by[lead_assigned][]" id="unassigned" value="0"><label for="unassigned">Unassigned</label></li>
+    </ul>
+
+    <ul>
+      <li><input type="date" name="range[created_at][]" id="start_date" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][0] ?? '' ?>"><label for="start_date">Start Date</label></li>
+      <li><input type="date" name="range[created_at][]" id="end_date" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][1] ?? '' ?>"><label for="end_date">End Date</label></li>
+    </ul>
+    <button type="submit">Filter</button>
+  </form>
+</div>
 <div id="table">
   <table>
     <tr>

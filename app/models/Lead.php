@@ -85,9 +85,9 @@ class Lead extends Application_Record
   public string $created_at;
   public string $updated_at;
 
-  public function paginate_leads(int $current_page, int $leads_per_index_page, string $sort_order, string $sort_by, array $filters): array
+  public function paginate_leads(int $current_page, int $leads_per_index_page, string $sort_order, string $sort_by, array $filters, array $ranges = []): array
   {
-    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by, [], $filters);
+    list($leads, $total_pages) = (new Lead)->paginate($current_page, $leads_per_index_page, $sort_order, $sort_by, [], $filters, $ranges);
     $all_counties = (new County)->fetch_by([], ['id', 'name']);
 
     // create a county id-name map

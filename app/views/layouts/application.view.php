@@ -44,19 +44,19 @@
         <li style="margin-block-end: 1em;">
           <a href="<?php $this->url('/dashboard/leads/montgomery'); ?>">Montgomery</a>
           <ul style="list-style: none; padding-inline-start: 1em;">
-            <li><a href="<?php $this->url('/dashboard/leads/montgomery/absentee_owner'); ?>">Absentee Owners</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/montgomery/expired'); ?>">Expireds</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/montgomery/frbo'); ?>">FRBO</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/montgomery/fsbo'); ?>">FSBO</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/absentee_owner/montgomery'); ?>">Absentee Owners</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/expired/montgomery'); ?>">Expireds</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/frbo/montgomery'); ?>">FRBO</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/fsbo/montgomery'); ?>">FSBO</a></li>
           </ul>
         </li>
         <li style="margin-block-end: 1em;">
           <a href="<?php $this->url('/dashboard/leads/auburn'); ?>">Auburn</a>
           <ul style="list-style: none; padding-inline-start: 1em;">
-            <li><a href="<?php $this->url('/dashboard/leads/auburn/absentee_owner'); ?>">Absentee Owners</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/auburn/expired'); ?>">Expireds</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/auburn/frbo'); ?>">FRBO</a></li>
-            <li><a href="<?php $this->url('/dashboard/leads/auburn/fsbo'); ?>">FSBO</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/absentee_owner/auburn'); ?>">Absentee Owners</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/expired/auburn'); ?>">Expireds</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/frbo/auburn'); ?>">FRBO</a></li>
+            <li><a href="<?php $this->url('/dashboard/leads/fsbo/auburn'); ?>">FSBO</a></li>
           </ul>
         </li>
 

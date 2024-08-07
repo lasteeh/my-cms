@@ -652,7 +652,7 @@ class ActiveRecord extends Base
 
 
   // WIP: multiple values per filter
-  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $returning = [], array $filter = []): array
+  public function paginate(int $current_page, int $limit, string $sort_order = 'asc',  string $sort_by = 'id', array $returning = [], array $filter = [], array $range = []): array
   {
     $results = [];
     $total_pages = 0;
@@ -684,6 +684,7 @@ class ActiveRecord extends Base
     $where_conditions = [];
     $bind_params = [];
 
+    // handle filter
     foreach ($filter as $column => $value) {
       if (is_array($value)) {
         $placeholders = implode(", ", array_fill(0, count($value), "?"));
@@ -693,6 +694,18 @@ class ActiveRecord extends Base
         $where_conditions[] = "{$column} = ?";
         $bind_params[] = $value;
       }
+    }
+
+    // handle range
+    foreach ($range as $column => $values) {
+      if (is_array($values) && count($values) === 2) {
+        $where_conditions[] = "{$column} BETWEEN ? AND ?";
+        $bind_params[] = $values[0];
+        $bind_params[] = $values[1];
+      }
+
+      // echo "TEST123";
+      // exit;
     }
 
     $where_clause = '';

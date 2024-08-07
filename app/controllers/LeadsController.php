@@ -11,6 +11,9 @@ class LeadsController extends ApplicationController
 {
   public function index()
   {
+    $date_today = new DateTime();
+    $formatted_date_today = $date_today->format('Y-m-d');
+
     $category = $this->get_route_param('category') ?? '';
     $category_listing_statuses = config('mrcleads.categories');
     $area = $this->get_route_param('area') ?? '';
@@ -21,6 +24,7 @@ class LeadsController extends ApplicationController
     $current_page = $_GET['page'] ?? 1;
     $total_pages = $_GET['total_pages'] ?? 1;
     $filter_by = [];
+    $range = [];
 
 
     switch ($category) {
@@ -46,9 +50,16 @@ class LeadsController extends ApplicationController
         $page_title = "FSBO";
         $filter_by['listing_status'] = $category_listing_statuses['fsbo'];
         break;
+      case 'montgomery':
+        $area = 'montgomery';
+        break;
+      case 'auburn':
+        $area = 'auburn';
+        break;
       default:
         $page_title = "Leads";
         $filter_by = $_GET['filter_by'] ?? [];
+        $range = $_GET['range'] ?? [];
         break;
     }
 
@@ -71,9 +82,18 @@ class LeadsController extends ApplicationController
       'page' => (int)$current_page,
       'total_pages' => (int)$total_pages,
       'filter_by' => $filter_by,
+      'range' => $range,
     ];
 
-    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by);
+    $processed_range = [];
+    if (isset($range['created_at']) && is_array($range['created_at'])) {
+      foreach ($range['created_at'] as $date) {
+        $processed_date = $date . " 00:00:00";
+        $processed_range['created_at'][] = $processed_date;
+      }
+    }
+
+    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by, $processed_range);
     $search_params['total_pages'] = (int)$total_pages;
 
     $this->set_page_info(['title' => $page_title]);
