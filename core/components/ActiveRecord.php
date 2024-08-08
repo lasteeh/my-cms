@@ -416,7 +416,7 @@ class ActiveRecord extends Base
       }
 
       $case_sql = implode(", ", $cases);
-      $id_placeholders = implode(",", array_map(fn ($id) => ":{$unique_column}_{$id}", $ids));
+      $id_placeholders = implode(",", array_map(fn($id) => ":{$unique_column}_{$id}", $ids));
 
       $sql = "UPDATE {$this->TABLE} SET {$case_sql} WHERE {$unique_column} in ({$id_placeholders})";
 
@@ -657,8 +657,9 @@ class ActiveRecord extends Base
     $results = [];
     $total_pages = 0;
 
+
     // get total number of records
-    $total_records = count($this->fetch_by($filter, ['id']));
+    $total_records = count($this->fetch_by($filter, ['id'], $range));
 
     // skip second query if no records found
     if (empty($total_records)) {
@@ -674,6 +675,7 @@ class ActiveRecord extends Base
     } elseif ($current_page > $total_pages) {
       $current_page = $total_pages;
     }
+
 
     // calculate offset for sql query
     $offset = ($current_page - 1) * $limit;
@@ -703,9 +705,6 @@ class ActiveRecord extends Base
         $bind_params[] = $values[0];
         $bind_params[] = $values[1];
       }
-
-      // echo "TEST123";
-      // exit;
     }
 
     $where_clause = '';
@@ -759,7 +758,7 @@ class ActiveRecord extends Base
     return $records;
   }
 
-  public function fetch_by(array $conditions, array $returned_columns = []): array
+  public function fetch_by(array $conditions, array $returned_columns = [], array $range = []): array
   {
     $select_clause = QueryBuilder::build_select_clause($returned_columns, $this);
 
@@ -782,6 +781,15 @@ class ActiveRecord extends Base
       } else {
         $where_conditions[] = "{$column} = ?";
         $bind_params[] = $value;
+      }
+    }
+
+    // handle range
+    foreach ($range as $column => $values) {
+      if (is_array($values) && count($values) === 2) {
+        $where_conditions[] = "{$column} BETWEEN ? AND ?";
+        $bind_params[] = $values[0];
+        $bind_params[] = $values[1];
       }
     }
 

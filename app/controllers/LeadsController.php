@@ -11,9 +11,6 @@ class LeadsController extends ApplicationController
 {
   public function index()
   {
-    $date_today = new DateTime();
-    $formatted_date_today = $date_today->format('Y-m-d');
-
     $category = $this->get_route_param('category') ?? '';
     $category_listing_statuses = config('mrcleads.categories');
     $area = $this->get_route_param('area') ?? '';
@@ -26,20 +23,25 @@ class LeadsController extends ApplicationController
     $filter_by = [];
     $range = [];
 
+    $leads = [
+      'items' => [],
+      'config' => [],
+    ];
+
 
     switch ($category) {
       case 'unassigned':
         $page_title = "Unassigned Leads";
-        $filter_by['lead_assigned'] = false;
+        $filter_by['lead_assigned'] = ['0'];
         break;
       case 'absentee_owner':
         $page_title = "Absentee Owners";
-        $filter_by['absentee_owner'] = true;
+        $filter_by['absentee_owner'] = ['1'];
         $filter_by['listing_status'] = $category_listing_statuses['expired'];
         break;
       case 'expired':
         $page_title = "Expireds";
-        $filter_by['absentee_owner'] = false;
+        $filter_by['absentee_owner'] = ['0'];
         $filter_by['listing_status'] = $category_listing_statuses['expired'];
         break;
       case 'frbo':
@@ -51,9 +53,11 @@ class LeadsController extends ApplicationController
         $filter_by['listing_status'] = $category_listing_statuses['fsbo'];
         break;
       case 'montgomery':
+        $page_title = "Leads (Montgomery)";
         $area = 'montgomery';
         break;
       case 'auburn':
+        $page_title = "Leads (Auburn)";
         $area = 'auburn';
         break;
       default:
@@ -74,7 +78,39 @@ class LeadsController extends ApplicationController
         break;
     }
 
-    $leads = [];
+    // only fetch todays leads
+    switch ($category) {
+      case 'absentee_owner':
+      case 'expired':
+      case 'frbo':
+      case 'fsbo':
+        switch ($area) {
+          case 'montgomery':
+          case 'auburn':
+            $category_title = str_replace("_", " ", $category);
+            if ($category === 'frbo' || $category === 'fsbo') {
+              $formatted_category_title = strtoupper($category_title);
+            } else {
+              $formatted_category_title = ucwords($category_title);
+            }
+
+            $area_title = ucwords($area);
+
+            $page_title = "{$formatted_category_title} ($area_title)";
+
+            $date_today = new DateTime();
+            $formatted_date_today = $date_today->format('Y-m-d');
+
+            $range['created_at'][] = $formatted_date_today;
+            $range['created_at'][] = $formatted_date_today;
+
+            $filter_by['import_lead'] = ['1'];
+            break;
+        }
+        break;
+    }
+
+
     $search_params = [
       'leads_per_page' => (int)$leads_per_page,
       'sort_by' => $sort_by,
@@ -88,13 +124,22 @@ class LeadsController extends ApplicationController
     $processed_range = [];
     if (isset($range['created_at']) && is_array($range['created_at'])) {
       foreach ($range['created_at'] as $date) {
+        if (empty($date)) continue;
+
         $processed_date = $date . " 00:00:00";
         $processed_range['created_at'][] = $processed_date;
       }
     }
 
-    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by, $processed_range);
+    $all_leads = [];
+    list($all_leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by, $processed_range);
     $search_params['total_pages'] = (int)$total_pages;
+
+    $pagination = [];
+    $pagination = $this->get_pages($search_params);
+
+    $leads['items'] = $all_leads;
+    $leads['config']['pagination'] = $pagination;
 
     $this->set_page_info(['title' => $page_title]);
     $this->set_object('leads', $leads);
@@ -159,8 +204,17 @@ class LeadsController extends ApplicationController
     } else {
       switch ($property) {
         case 'absentee_owner':
-          $absentee_owner = $lead->absentee_owner ?? true;
+          $absentee_owner = $lead->absentee_owner ?? false;
+          $listing_status = $lead->listing_status ?? '';
+
+          if ($listing_status === "FRBO" || $listing_status === "FSBO") {
+            $source = "REDX";
+          } else {
+            $source = $lead->absentee_owner ? "REDX" : "Absentee Owner";
+          }
+
           $lead->update_column('absentee_owner', !$absentee_owner);
+          $lead->update_column('source', $source);
           break;
 
         case 'import_lead':
@@ -198,66 +252,61 @@ class LeadsController extends ApplicationController
     $this->redirect($origin_url, ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
-  private function list(array $options = [], array $filters = [])
+  private function get_pages(array $search_params = [], int $maximum_page_links = 10): array
   {
-    $view = "index";
-    $page_title = $options['title'] ?? 'Leads';
-    $lead_category = $options['lead_category'] ?? "";
-    $lead_area = $options['lead_area'] ?? "";
+    $links = [];
 
-    if ($lead_category === "unassigned") {
-      $counties = (new County)->all();
-      $this->set_object('counties', $counties);
+    $current_page = $search_params['page'] ?? 1;
+    $midpoint = (int) floor($maximum_page_links / 2);
+    $start = max(1, $current_page - $midpoint);
+    $end = min($search_params['total_pages'], $start + $maximum_page_links - 1);
+
+    $start = max(1, $end - $maximum_page_links + 1);
+
+    // previous page link
+    if ($current_page  > 1) {
+      $search_params['page'] = $current_page - 1;
+      $pagination_params = http_build_query($search_params);
+      $links[] = ['label' => '&laquo; Previous', 'href' => "?{$pagination_params}"];
     }
 
-    // default search params
-    $default = [
-      'leads_per_page' => 100,
-      'sort_by' => 'id',
-      'sort_order' => 'desc',
-      'current_page' => 1,
-      'total_page' => 1,
-      'filter_by' => $filters,
-    ];
-
-    // determine lead count to show
-    $leads_per_page = isset($_GET['leads_per_page'])
-      && is_int((int)($_GET['leads_per_page']))
-      ? $_GET['leads_per_page'] : $default['leads_per_page'];
-
-    // determine current page number
-    $current_page = (int)($_GET['page'] ?? $default['current_page']);
-
-    // determine sort params
-    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : $default['sort_by'];
-    $sort_order = (isset($_GET['sort_order']) && (strtolower($_GET['sort_order']) === 'asc')) ? 'asc' : 'desc';
-
-    // determine filter params
-    $filter_by = isset($_GET['filter_by']) ? $_GET['filter_by'] : $default['filter_by'];
-
-    // fetch leads for current page
-    list($leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by);
-
-    if ($current_page > (int)$total_pages) {
-      $current_page = (int)$total_pages;
+    // first page link and ellipsis if needed
+    if ($start > 1) {
+      $search_params['page'] = 1;
+      $pagination_params = http_build_query($search_params);
+      $links[] = ['label' => '1', 'href' => "?{$pagination_params}"];
+      $links[] = ['label' => '...', 'href' => '#'];
     }
 
-    $search_params = [
-      'leads_per_page' => $leads_per_page,
-      'sort_by' => $sort_by,
-      'sort_order' => $sort_order,
-      'page' => $current_page,
-      'total_pages' => $total_pages,
-      'filter_by' => $filter_by,
-    ];
+    // page number links
+    for ($i = $start; $i <= $end; $i++) {
+      $search_params['page'] = $i;
+      $pagination_params = http_build_query($search_params);
 
+      if ($i == $current_page) {
+        $links[] = ['label' => (string)$i, 'href' => '#', 'current' => true];
+      } else {
+        $links[] = ['label' => (string)$i, 'href' => "?$pagination_params"];
+      }
+    }
 
-    $this->set_page_info(['title' => $page_title]);
-    $this->set_object('leads', $leads);
-    $this->set_object('lead_category', $lead_category);
-    $this->set_object('lead_area', $lead_area);
-    $this->set_object('search_params', $search_params);
-    $this->render($view);
+    // last page link and ellipsis if needed
+    if ($end < $search_params['total_pages']) {
+      $search_params['page'] = $search_params['total_pages'];
+      $pagination_params = http_build_query($search_params);
+
+      $links[] = ['label' => '...', 'href' => '#'];
+      $links[] = ['label' => (string)$search_params['total_pages'], 'href' => "?{$pagination_params}"];
+    }
+
+    // next page link
+    if ($current_page < $search_params['total_pages']) {
+      $search_params['page'] = $current_page + 1;
+      $pagination_params = http_build_query($search_params);
+      $links[] = ['label' => 'Next &raquo;', 'href' => "?$pagination_params"];
+    }
+
+    return $links;
   }
 
   private function save_files(array $files_params): array
@@ -328,10 +377,87 @@ class LeadsController extends ApplicationController
   private function files_params()
   {
     $permitted_fields = [
-      'Vortex ID', 'Listing Status', 'Name', 'Name 2', 'Name 3', 'Name 4', 'Name 5', 'Name 6', 'Name 7', 'MLS Name', 'MLS Name 2', 'MLS Name 3', 'MLS Name 4', 'MLS Name 5', 'MLS Name 6', 'MLS Name 7', 'Phone', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5', 'Phone 6', 'Phone 7', 'Phone Status', 'Phone 2 Status', 'Phone 3 Status', 'Phone 4 Status', 'Phone 5 Status', 'Phone 6 Status', 'Phone 7 Status', 'Email', 'Email 2', 'Email 3', 'Email 4', 'Email 5', 'Email 6', 'Email 7', 'Address', 'Address 2', 'Address 3', 'Address 4', 'Address 5', 'Address 6', 'Address 7', 'First Name', 'Last Name', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip', 'List Date', 'List Price', 'Days On Market', 'Lead Date', 'Expired Date', 'Withdrawn Date', 'Status Date', 'Listing Agent', 'Listing Broker', 'MLS/FSBO ID', 'Property Address', 'Property City', 'Property State', 'Property Zip',
+      'Vortex ID',
+      'Listing Status',
+      'Name',
+      'Name 2',
+      'Name 3',
+      'Name 4',
+      'Name 5',
+      'Name 6',
+      'Name 7',
+      'MLS Name',
+      'MLS Name 2',
+      'MLS Name 3',
+      'MLS Name 4',
+      'MLS Name 5',
+      'MLS Name 6',
+      'MLS Name 7',
+      'Phone',
+      'Phone 2',
+      'Phone 3',
+      'Phone 4',
+      'Phone 5',
+      'Phone 6',
+      'Phone 7',
+      'Phone Status',
+      'Phone 2 Status',
+      'Phone 3 Status',
+      'Phone 4 Status',
+      'Phone 5 Status',
+      'Phone 6 Status',
+      'Phone 7 Status',
+      'Email',
+      'Email 2',
+      'Email 3',
+      'Email 4',
+      'Email 5',
+      'Email 6',
+      'Email 7',
+      'Address',
+      'Address 2',
+      'Address 3',
+      'Address 4',
+      'Address 5',
+      'Address 6',
+      'Address 7',
+      'First Name',
+      'Last Name',
+      'Mailing Street',
+      'Mailing City',
+      'Mailing State',
+      'Mailing Zip',
+      'List Date',
+      'List Price',
+      'Days On Market',
+      'Lead Date',
+      'Expired Date',
+      'Withdrawn Date',
+      'Status Date',
+      'Listing Agent',
+      'Listing Broker',
+      'MLS/FSBO ID',
+      'Property Address',
+      'Property City',
+      'Property State',
+      'Property Zip',
     ];
     $required_fields = [
-      'Vortex ID', 'Listing Status', 'Name', 'Phone', 'Email', 'Mailing Street', 'Mailing City', 'Mailing State', 'Mailing Zip',  'List Price', 'Status Date', 'Property Address', 'Property City', 'Property State', 'Property Zip',
+      'Vortex ID',
+      'Listing Status',
+      'Name',
+      'Phone',
+      'Email',
+      'Mailing Street',
+      'Mailing City',
+      'Mailing State',
+      'Mailing Zip',
+      'List Price',
+      'Status Date',
+      'Property Address',
+      'Property City',
+      'Property State',
+      'Property Zip',
     ];
     $files = $this->params_permit(['leads'], $_FILES);
 

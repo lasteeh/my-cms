@@ -417,7 +417,16 @@ class Lead extends Application_Record
 
     // define removeable columns if empty
     $columns_to_check_if_empty = [
-      'phone_4', 'phone_5', 'phone_6', 'phone_7', 'email_2', 'email_3', 'email_4', 'email_5', 'email_6', 'email_7',
+      'phone_4',
+      'phone_5',
+      'phone_6',
+      'phone_7',
+      'email_2',
+      'email_3',
+      'email_4',
+      'email_5',
+      'email_6',
+      'email_7',
     ];
     // scan empty columns and define in an array
     $columns_to_remove = [];
