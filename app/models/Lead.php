@@ -130,49 +130,64 @@ class Lead extends Application_Record
     return [$leads_to_show, $total_pages];
   }
 
-  public function get_leads_from_files(array $saved_files, array $permitted_fields = []): array
+  public function get_leads_from_files(array $files_params): array
   {
-    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\";
-    $lead_ids = []; // list of leads that will be returned later
-    $error_messages = []; // list of errors that will be returned later
+    $uploaded_files = $files_params['files']['leads'] ?? [];
+    $permitted_fields = $files_params['permitted_fields'] ?? [];
+    $required_fields = $files_params['required_fields'] ?? [];
 
-    if (empty($saved_files)) {
-      $error_messages[] = "No leads found.";
-      return [null, $error_messages];
+    $new_leads = 0;
+    $errors = [];
+
+    // check directory existence
+    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\source\\";
+    if (!is_dir($directory)) {
+      $dir_permissions = 0755;
+      $recursive = true;
+      mkdir($directory, $dir_permissions, $recursive);
     }
 
-    foreach ($saved_files as $file) {
-      $file_name = str_replace($directory, "", $file);
+    foreach ($uploaded_files['tmp_name'] as $key => $temp_name) {
+      $uploaded_file_name = basename($uploaded_files['name'][$key]);
+      $uploaded_file_type = mime_content_type($temp_name);
 
-      if (!file_exists($file)) {
-        $error_messages[] = "File not found in storage: $file_name";
+      // only allow csv
+      if ($uploaded_file_type !== "text/csv") {
+        $errors[] = "Invalid file type: $uploaded_file_name";
         continue;
       }
 
-      $handle = fopen($file, "r");
+      // check if file can be opened
+      $handle = fopen($temp_name, "r");
       if (!$handle) {
-        $error_messages[] = "Failed to open file: $file_name";
+        $errors[] = "Failed to open file: $uploaded_file_name";
         continue;
       }
 
+      // get headers
       $header = fgetcsv($handle, 0, ",", "\"", "\\");
       if (!$header) {
-        $error_messages[] = "Failed to read header: $file_name";
+        $errors[] = "Failed to read header from file: $uploaded_file_name";
         fclose($handle);
         continue;
       }
 
-      $file_leads = []; // list of leads in one file
+      // check if required fields are in header
+      $missing_fields = array_diff($required_fields, $header);
+      if (!empty($missing_fields)) {
+        $errors[] = "Missing required fields in $uploaded_file_name: " . implode(", ", $missing_fields);
+        fclose($handle);
+        continue;
+      }
+
+      $file_leads = []; // list of leads in a file
       while (($data = fgetcsv($handle, 0, ",", "\"", "\\")) !== false) {
         $lead_data = array_combine($header, $data);
 
         $lead = []; // a single lead
         foreach ($permitted_fields as $field) {
-          $field_name = strtolower($field);
-          $field_name = str_replace(" ", "_", $field_name);
-          $field_name = str_replace("/", "_", $field_name);
+          $field_name = strtolower(str_replace([" ", "/"], "_", $field));
 
-          // $lead[$field_name] = empty($lead_data[$field]) ? null : $lead_data[$field];
           $field_value = empty($lead_data[$field]) ? null : $lead_data[$field];
 
           // process date fields
@@ -191,24 +206,42 @@ class Lead extends Application_Record
         $file_leads[] = $lead;
       }
 
-      fclose($handle);
-
-      // skip db save if empty
+      // skip database save if empty
       if (empty($file_leads)) {
-        $error_messages[] = "No new leads found in file: $file_name";
+        $errors[] = "No new leads found in file: $uploaded_file_name";
         continue;
       }
 
-      // perform duplicates filtration and batch insert
-      $inserted_lead_ids = $this->insert_all($file_leads, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
-      if ($inserted_lead_ids === false) {
-        $error_messages[] = "Failed to save leads from file: $file_name";
+      // perform duplicate filtration and batch insert
+      $inserted_leads = $this->insert_all($file_leads, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
+      if ($inserted_leads === false) {
+        $errors[] = "Failed to save leads from file: $uploaded_file_name";
+        continue;
       }
 
-      $lead_ids = array_merge($lead_ids, $inserted_lead_ids);
+      if (empty($inserted_leads)) {
+        $errors[] = "No new leads found in file: $uploaded_file_name";
+        continue;
+      }
+
+
+      $new_leads = $new_leads + $inserted_leads;
+
+      // close file handle
+      fclose($handle);
+
+      // move file to storage
+      $date = new DateTime(); // system's default timezone
+      $formatted_date = $date->format('Y-m-d_Hisu');
+      $trimmed_file_name = str_replace(".csv", "", $uploaded_file_name);
+      $file_destination = $directory . $formatted_date . "_leads-source (" . $trimmed_file_name . ").csv";
+
+      if (!move_uploaded_file($temp_name, $file_destination)) {
+        $errors[] = "Failed to move file to storage: $uploaded_file_name";
+      }
     }
 
-    return [$lead_ids, $error_messages];
+    return [$new_leads, $errors];
   }
 
   public function assign_leads(): array
@@ -590,6 +623,30 @@ class Lead extends Application_Record
     }
 
     return [$exported_data, $error_messages];
+  }
+
+  public function toggle_property(string $property)
+  {
+    switch ($property) {
+      case 'absentee_owner':
+        $absentee_owner = $this->absentee_owner ?? false;
+        $listing_status = $this->listing_status ?? '';
+
+        if ($listing_status === "FRBO" || $listing_status === "FSBO") {
+          $source = "REDX";
+        } else {
+          $source = $this->absentee_owner ? "REDX" : "Absentee Owner";
+        }
+
+        $this->update_column('absentee_owner', !$absentee_owner);
+        $this->update_column('source', $source);
+        break;
+
+      case 'import_lead':
+        $import_lead = $this->import_lead ?? true;
+        $this->update_column('import_lead', !$import_lead);
+        break;
+    }
   }
 
   private function standardize_street_address(string $address, array $suffix_lookup): null|string

@@ -103,8 +103,11 @@ return [
   '/dashboard/leads/toggle/:property/:id' => [
     'POST' => 'leads@toggle',
   ],
-  '/dashboard/leads/export/:area/:category' => [
+  '/dashboard/leads/export' => [
     'POST' => 'leads@export',
+  ],
+  '/dashboard/leads/clear' => [
+    'POST' => 'leads@clear',
   ],
 
   // keyword "no_match" sets catch-all 

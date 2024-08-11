@@ -16,7 +16,7 @@
   <main>
     <?php include $view_file; ?>
   </main>
-  <aside style="resize: horizontal;">
+  <aside>
     <nav style="height: 100%;">
       <menu style="display: flex; flex-flow: column nowrap; height: 100%;">
         <li style="margin-block-end: 2em;"><a href="<?php $this->url('/dashboard'); ?>">Dashboard</a></li>
@@ -25,8 +25,8 @@
         <li><a target="_blank" href="https://matrix.alamls.net/Matrix/Default.aspx?c=AAEAAAD*****AQAAAAAAAAARAQAAAEQAAAAGAgAAAAQzMTQ3DUAGAwAAAAfDhcO0wosqDQIL&f=">MAAR® Saved Searches</a></li>
         <li style="margin-block-end: 1em;"><a target="_blank" href="https://vortex.theredx.com/">Vortex</a></li>
 
-        <li><a target="_blank" href="https://www.homesearchinauburn.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Auburn CINC Site - Import</a></li>
-        <li style="margin-block-end: 1em;"><a target="_blank" href="https://www.searchhomesinmontgomery.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Montgomery CINC Site - Import</a></li>
+        <li><a target="_blank" href="https://www.homesearchinauburn.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Auburn CINC Site</a></li>
+        <li style="margin-block-end: 1em;"><a target="_blank" href="https://www.searchhomesinmontgomery.com/signin?returnurl=%2Fdashboard%2Fleadsimport">Montgomery CINC Site</a></li>
 
         <li style="margin-block-end: 1em;"><a href="<?php $this->url('/dashboard/cities'); ?>">Standardized City Details</a></li>
 

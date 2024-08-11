@@ -47,7 +47,7 @@
         "header header"
         "aside main"
         "footer footer";
-      grid-template-columns: minmax(150px, max-content) 1fr;
+      grid-template-columns: 26ch 1fr;
       grid-template-rows: auto 1fr auto;
     }
   }

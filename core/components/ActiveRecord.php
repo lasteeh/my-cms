@@ -295,17 +295,21 @@ class ActiveRecord extends Base
     return true;
   }
 
-  public function insert_all(array $objects, array $options = []): array|false
+  public function insert_all(array $objects, array $options = []): int|false
   {
     if (empty($objects)) {
       return false;
     }
 
-    $inserted_rows = []; // the array that we will return later
+    $inserted_rows = 0; // the count that we will return later
 
     // set options
     $unique_column = $options['unique_by'] ?? null;
     $batch_size = $options['batch_size'] ?? 100;
+    $duplicate_handling = $options['on_duplicate'] ?? 'update'; // update or ignore
+
+    // get initial count before insertion
+    $initial_count = $this->count();
 
     // prepare fields and values for batch insert
     $fields  = array_keys(reset($objects));
@@ -315,15 +319,14 @@ class ActiveRecord extends Base
 
     foreach ($chunks as $chunk) {
       // prepare values and placeholders for current batch
-
       $values = [];
       $placeholders = [];
 
       // prepare sql parts
       $insert_sql = "INSERT INTO {$this->TABLE} (" . implode(",", $fields) . ") VALUES ";
-      $update_sql = $unique_column ? " ON DUPLICATE KEY UPDATE " : "";
+      $update_sql = $unique_column && $duplicate_handling === 'update' ? " ON DUPLICATE KEY UPDATE " : "";
 
-      if ($unique_column) {
+      if ($unique_column && $duplicate_handling === 'update') {
         foreach ($fields as $field) {
           if ($field === $unique_column) continue;
 
@@ -331,6 +334,8 @@ class ActiveRecord extends Base
         }
 
         $update_sql = rtrim($update_sql, ", ");
+      } elseif ($duplicate_handling === 'ignore') {
+        $insert_sql = str_replace('INSERT INTO', 'INSERT IGNORE INTO', $insert_sql);
       }
 
       foreach ($chunk as $object) {
@@ -352,20 +357,16 @@ class ActiveRecord extends Base
         }
 
         $statement->execute();
-
-        $last_inserted_id = self::$DB->lastInsertId();
-        $affected_rows = $statement->rowCount();
-
-        for ($i = 0; $i < $affected_rows; $i++) {
-          $inserted_rows[] = $last_inserted_id + $i;
-        }
       } catch (\PDOException $e) {
         $this->ERRORS[] = $e->getMessage();
         $this->handle_errors();
       }
     }
 
+    // get count after insertion
+    $final_count = $this->count();
 
+    $inserted_rows = $final_count - $initial_count;
 
     return $inserted_rows;
   }

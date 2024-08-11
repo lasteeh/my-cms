@@ -28,11 +28,13 @@ class LeadsController extends ApplicationController
       'config' => [],
     ];
 
-
+    // ['0'] = false
+    // ['1'] = true
     switch ($category) {
       case 'unassigned':
         $page_title = "Unassigned Leads";
         $filter_by['lead_assigned'] = ['0'];
+        $filter_by['import_lead'] = ['1'];
         break;
       case 'absentee_owner':
         $page_title = "Absentee Owners";
@@ -153,22 +155,11 @@ class LeadsController extends ApplicationController
     $alert_messages = [];
     $files_params = $this->files_params();
 
-    // process and save files to app storage
-    list($saved_files, $file_error_messages) = $this->save_files($files_params);
-    $error_messages = array_merge($error_messages, $file_error_messages);
+    list($lead_count, $errors) = (new Lead)->get_leads_from_files($files_params);
+    $error_messages = array_merge($error_messages, $errors);
 
-    // grab leads from saved files in storage
-    list($leads, $lead_error_messages) = (new Lead)->get_leads_from_files($saved_files, $files_params['permitted_fields']);
-    $error_messages = array_merge($error_messages, $lead_error_messages);
-
-    if (is_array($leads)) {
-      $lead_count = count($leads);
-
-      if ($lead_count > 0) {
-        $alert_messages[] = "{$lead_count} new leads found.";
-      } else {
-        $error_messages[] = "No new leads found.";
-      }
+    if ($lead_count > 0) {
+      $alert_messages[] = "{$lead_count} new leads found.";
     }
 
     $redirect_link = $_POST['origin_url'] ?? '/dashboard/leads';
@@ -202,26 +193,7 @@ class LeadsController extends ApplicationController
     if (!$lead) {
       $error_messages[] = "Lead not found.";
     } else {
-      switch ($property) {
-        case 'absentee_owner':
-          $absentee_owner = $lead->absentee_owner ?? false;
-          $listing_status = $lead->listing_status ?? '';
-
-          if ($listing_status === "FRBO" || $listing_status === "FSBO") {
-            $source = "REDX";
-          } else {
-            $source = $lead->absentee_owner ? "REDX" : "Absentee Owner";
-          }
-
-          $lead->update_column('absentee_owner', !$absentee_owner);
-          $lead->update_column('source', $source);
-          break;
-
-        case 'import_lead':
-          $import_lead = $lead->import_lead ?? true;
-          $lead->update_column('import_lead', !$import_lead);
-          break;
-      }
+      $lead->toggle_property($property);
     }
 
     $row = $_POST['row'] ?? '';
@@ -232,24 +204,9 @@ class LeadsController extends ApplicationController
 
   public function export()
   {
-    $error_messages = [];
-    $alert_messages = [];
 
-    $origin_url = $_POST['origin_url'] ?? '/dashboard/leads';
-    $area = $this->get_route_param('area') ?? "";
-    $category = $this->get_route_param('category') ?? "";
-
-    list($exported_data, $errors) = (new Lead)->export_leads($area, $category);
-    $error_messages = array_merge($error_messages, $errors);
-
-    if (!empty($exported_data)) {
-      if (isset($exported_data['leads'])) {
-        $exported_data_count = count($exported_data['leads']);
-        $alert_messages[] = "{$exported_data_count} leads exported.";
-      }
-    }
-
-    $this->redirect($origin_url, ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    // wip
+    exit;
   }
 
   private function get_pages(array $search_params = [], int $maximum_page_links = 10): array
@@ -307,66 +264,6 @@ class LeadsController extends ApplicationController
     }
 
     return $links;
-  }
-
-  private function save_files(array $files_params): array
-  {
-    $files = $files_params['files']['leads'] ?? [];
-    $permitted_fields = $files_params['permitted_fields'] ?? [];
-    $required_fields = $files_params['required_fields'] ?? [];
-
-    // check directory existence
-    $directory = self::$ROOT_DIR . self::STORAGE_DIR . "\\leads\\source\\";
-    if (!is_dir($directory)) {
-      $dir_permissions = 0755;
-      $recursive = true;
-      mkdir($directory, $dir_permissions, $recursive);
-    }
-
-
-    $saved_files = [];
-    $error_messages = [];
-    foreach ($files['tmp_name'] as $key => $temp_name) {
-      $file_name = basename($files['name'][$key]);
-      $file_type = mime_content_type($temp_name);
-
-      // only allow csv
-      if ($file_type !== "text/csv") {
-        $error_messages[] = "Invalid file type: $file_name";
-        continue;
-      }
-
-      // read and process file content (replace carriage returns with semicolons)
-      $file_content = file_get_contents($temp_name);
-      $file_content = str_replace("\r", ";", $file_content);
-
-      // get header line
-      $lines = explode("\n", $file_content);
-      $header = str_getcsv($lines[0]);
-
-      // check if all required fields are in the header
-      $missing_fields = array_diff($required_fields, $header);
-      if (!empty($missing_fields)) {
-        $error_messages[] = "Missing required fields in $file_name: " . implode(", ", $missing_fields);
-        continue;
-      }
-
-      // save processed content to new file
-      $date = new DateTime(); // system's default timezone
-      $formatted_date = $date->format('Y-m-d_Hisu');
-      $trimmed_file_name = str_replace(".csv", "", $file_name);
-      $file_destination = $directory . $formatted_date . "_leads-source (" . $trimmed_file_name . ").csv";
-
-      // write content to file
-      if (!(file_put_contents($file_destination, $file_content))) {
-        $error_messages[] = "Failed to save source file: $file_name";
-        continue;
-      }
-
-      $saved_files[] = $file_destination;
-    }
-
-    return [$saved_files, $error_messages];
   }
 
   private function set_current_lead()

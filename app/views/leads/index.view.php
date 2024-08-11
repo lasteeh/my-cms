@@ -40,6 +40,16 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
     isolation: isolate;
   }
 
+  #upload {
+    & input[type="file"] {
+      border: 1px solid lightgrey;
+
+      &::file-selector-button {
+        padding: 0.25em 0.5em;
+      }
+    }
+  }
+
   #filter {
     display: flex;
     flex-flow: row wrap;
@@ -234,7 +244,53 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
   }
 </style>
 
-<h1 style="margin-block-end: 1em;"><?= $this->get_page_info('title') ?></h1>
+<?php
+if ($errors) {  ?>
+  <ul>
+    <?php
+    foreach ($errors as $error) {
+      echo "<li>{$error}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+
+if ($alerts) {  ?>
+  <ul>
+    <?php
+    foreach ($alerts as $alert) {
+      echo "<li>{$alert}</li>";
+    }
+    ?>
+  </ul>
+<?php
+}
+?>
+
+<h1 style="margin-block-end: 0.5em;"><?= $this->get_page_info('title') ?></h1>
+
+<div style="display: flex; flex-flow: row wrap; justify-content: start; gap: 0.5em; margin-block: 0.5em;">
+  <form id="upload" action="<?= $this->get_url('/dashboard/leads/batch/add'); ?>" method="post" enctype="multipart/form-data" style="max-width: max-content;">
+    <input type="hidden" name="origin_url" value="<?= $origin_url ?>">
+    <input type="file" name="leads[]" accept=".csv" autocomplete="off" required multiple>
+    <button type="submit" style="padding: 0.25em 0.5em;">Upload</button>
+  </form>
+
+  <form id="assign" action="<?= $this->get_url('/dashboard/leads/assign'); ?>" method="post" style="max-width: max-content;">
+    <input type="hidden" name="origin_url" value="<?= $origin_url ?>">
+    <button type="submit" style="padding: 0.25em 0.5em;">Assign</button>
+  </form>
+
+  <form id="export" action="<?= $this->get_url('/dashboard/leads/export'); ?>" method="post" style="max-width: max-content;">
+    <button type="submit" style="padding: 0.25em 0.5em;">Export</button>
+  </form>
+
+  <form id="clear" action="<?= $this->get_url('/dashboard/leads/clear'); ?>" method="post" style="max-width: max-content; margin-inline-start: auto;">
+    <input type="hidden" name="origin_url" value="<?= $origin_url ?>">
+    <button type="submit" style="padding: 0.25em 0.5em; background-color: hsl(var(--bg-red),0.9); border-radius: 2px; border: 1px solid black; font-weight: bold; color: white;">Clear</button>
+  </form>
+</div>
 
 <div id="leads-table">
 
