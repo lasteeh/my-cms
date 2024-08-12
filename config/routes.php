@@ -94,21 +94,22 @@ return [
   '/dashboard/leads/assign' => [
     'POST' => 'leads@assign',
   ],
+  '/dashboard/leads/clear' => [
+    'POST' => 'leads@clear',
+  ],
   '/dashboard/leads/:category' => [
     'GET' => 'leads@index',
   ],
   '/dashboard/leads/:category/:area' => [
     'GET' => 'leads@index',
   ],
+  '/dashboard/leads/export/:category/:area' => [
+    'GET' => 'leads@export',
+  ],
   '/dashboard/leads/toggle/:property/:id' => [
     'POST' => 'leads@toggle',
   ],
-  '/dashboard/leads/export' => [
-    'POST' => 'leads@export',
-  ],
-  '/dashboard/leads/clear' => [
-    'POST' => 'leads@clear',
-  ],
+
 
   // keyword "no_match" sets catch-all 
   'no_match' => [

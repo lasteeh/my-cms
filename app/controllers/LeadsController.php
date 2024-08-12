@@ -101,10 +101,10 @@ class LeadsController extends ApplicationController
             $page_title = "{$formatted_category_title} ($area_title)";
 
             $date_today = new DateTime();
-            $formatted_date_today = $date_today->format('Y-m-d');
+            $start_date = (clone $date_today)->format('Y-m-d');
+            $end_date = (clone $date_today)->modify('+1 day')->format('Y-m-d');
 
-            $range['created_at'][] = $formatted_date_today;
-            $range['created_at'][] = $formatted_date_today;
+            $range['created_at'] = [$start_date, $end_date];
 
             $filter_by['import_lead'] = ['1'];
             break;
@@ -141,6 +141,8 @@ class LeadsController extends ApplicationController
     $pagination = $this->get_pages($search_params);
 
     $leads['items'] = $all_leads;
+    $leads['area'] = $area;
+    $leads['category'] = $category;
     $leads['config']['pagination'] = $pagination;
 
     $this->set_page_info(['title' => $page_title]);
@@ -204,9 +206,67 @@ class LeadsController extends ApplicationController
 
   public function export()
   {
+    $error_messages = [];
+    $alert_messages = [];
 
-    // wip
-    exit;
+    $category = $this->get_route_param('category') ?? '';
+    $area = $this->get_route_param('area') ?? '';
+
+    $sort_by = $_GET['sort_by'] ?? 'id';
+    $sort_order = $_GET['sort_order'] ?? 'desc';
+    $filter_by = $_GET['filter_by'] ?? [];
+    $range = $_GET['range'] ?? [];
+
+    $processed_range = [];
+    if (isset($range['created_at']) && is_array($range['created_at'])) {
+      foreach ($range['created_at'] as $date) {
+        if (empty($date)) continue;
+
+        $processed_date = $date . " 00:00:00";
+        $processed_range['created_at'][] = $processed_date;
+      }
+    }
+
+    $export_params = [
+      'sort_by' => $sort_by,
+      'sort_order' => $sort_order,
+      'filter_by' => $filter_by,
+      'range' => $processed_range,
+    ];
+
+
+    $valid_categories = ['absentee_owner', 'expired', 'frbo', 'fsbo'];
+    $valid_areas = ['montgomery', 'auburn'];
+
+    if (empty($category) || !in_array($category, $valid_categories) || empty($area) || !in_array($area, $valid_areas)) {
+      $error_messages[] = "Invalid export params: area or category";
+      $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    }
+
+    list($file, $errors) = (new Lead)->get_export($category, $area);
+    $error_messages = array_merge($error_messages, $errors);
+
+    if (empty($file)) {
+      $error_messages[] = "Export failed.";
+      $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    }
+
+    if (!file_exists($file['path'])) {
+      $error_messages[] = "File not found.";
+      $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
+    }
+
+    // Set headers to force file download
+    header('Content-Type: ' . $file['type']);
+    header('Content-Disposition: attachment; filename="' . $file['name'] . '"');
+    header('Content-Transfer-Encoding: binary');
+    header('Content-Length: ' . $file['size']);
+    header('Pragma: public');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    header('Expires: 0');
+
+    // Read and output the file content
+    readfile($file['path']);
   }
 
   private function get_pages(array $search_params = [], int $maximum_page_links = 10): array

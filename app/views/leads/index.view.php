@@ -9,6 +9,9 @@ $alerts = $this->get_flash('alerts');
 $leads = $this->get_object('leads');
 $search_params = $this->get_object('search_params');
 
+$lead_area = $leads['area'] ?? '';
+$lead_category = $leads['category'] ?? '';
+
 $paginations = $leads['config']['pagination'] ?? [];
 $pagination_links = '<ul class="pagination">';
 foreach ($paginations as $link) {
@@ -43,6 +46,7 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
   #upload {
     & input[type="file"] {
       border: 1px solid lightgrey;
+      border-radius: 0.25em;
 
       &::file-selector-button {
         padding: 0.25em 0.5em;
@@ -282,13 +286,25 @@ if ($alerts) {  ?>
     <button type="submit" style="padding: 0.25em 0.5em;">Assign</button>
   </form>
 
-  <form id="export" action="<?= $this->get_url('/dashboard/leads/export'); ?>" method="post" style="max-width: max-content;">
-    <button type="submit" style="padding: 0.25em 0.5em;">Export</button>
-  </form>
+  <?php
+  $valid_categories = ['absentee_owner', 'expired', 'frbo', 'fsbo'];
+  $valid_areas = ['montgomery', 'auburn'];
+
+  if (!empty($lead_category) && in_array($lead_category, $valid_categories) && !empty($lead_area) && in_array($lead_area, $valid_areas)) {
+    $export_link = $this->get_url("/dashboard/leads/export/{$lead_category}/{$lead_area}?" . http_build_query($search_params));
+    $export_button = <<<HTML
+        <a id="export" href="$export_link" style="max-width: max-content;">
+          <button type="button" style="padding: 0.25em 0.5em;">Export</button>
+        </a>
+      HTML;
+
+    echo $export_button;
+  }
+  ?>
 
   <form id="clear" action="<?= $this->get_url('/dashboard/leads/clear'); ?>" method="post" style="max-width: max-content; margin-inline-start: auto;">
     <input type="hidden" name="origin_url" value="<?= $origin_url ?>">
-    <button type="submit" style="padding: 0.25em 0.5em; background-color: hsl(var(--bg-red),0.9); border-radius: 2px; border: 1px solid black; font-weight: bold; color: white;">Clear</button>
+    <button onclick="return confirm('Are you sure?');" type="submit" style="padding: 0.25em 0.5em; background-color: hsl(var(--bg-red),0.9); border-radius: 0.25em; border: 1px solid black; font-weight: bold; color: white;">Clear</button>
   </form>
 </div>
 
@@ -301,7 +317,7 @@ if ($alerts) {  ?>
       <ul>
         <li><label><input type="checkbox" name="filter_by[listing_status][]" value="Expired" <?= $is_checked('listing_status', 'Expired', $search_params); ?>><span>Expireds</span></label></li>
         <li><label><input type="checkbox" name="filter_by[listing_status][]" value="Withdrawn" <?= $is_checked('listing_status', 'Withdrawn', $search_params); ?>><span>Withdrawn</span></label></li>
-        <li><label><input type="checkbox" name="filter_by[listing_status][]" value="Off Market" <?= $is_checked('listing_status', 'Market', $search_params); ?>><span>Off Market</span></label></li>
+        <li><label><input type="checkbox" name="filter_by[listing_status][]" value="Off Market" <?= $is_checked('listing_status', 'Off Market', $search_params); ?>><span>Off Market</span></label></li>
         <li><label><input type="checkbox" name="filter_by[listing_status][]" value="Cancelled" <?= $is_checked('listing_status', 'Cancelled', $search_params); ?>><span>Cancelled</span></label></li>
         <li><label><input type="checkbox" name="filter_by[listing_status][]" value="FRBO" <?= $is_checked('listing_status', 'FRBO', $search_params); ?>><span>FRBO</span></label></li>
         <li><label><input type="checkbox" name="filter_by[listing_status][]" value="FSBO" <?= $is_checked('listing_status', 'FSBO', $search_params); ?>><span>FSBO</span></label></li>
@@ -342,7 +358,7 @@ if ($alerts) {  ?>
 
     <div class="filter-group" id="filter-date">
       <label>Start Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][0] ?? '' ?>"></label>
-      <label>End Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][1] ?? '' ?>"></label>
+      <label>End Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->modify('+1 day')->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][1] ?? '' ?>"></label>
     </div>
 
     <button type="submit">Filter</button>

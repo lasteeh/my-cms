@@ -357,9 +357,9 @@ class Lead extends Application_Record
     return [$assigned_leads, $error_messages];
   }
 
-  public function export_leads(string $area, string $category): array
+  public function get_export(string $category, string $area): array
   {
-    $exported_data = [];
+    $exported_file = [];
     $error_messages = [];
 
     // only fetch leads to import
@@ -434,10 +434,7 @@ class Lead extends Application_Record
     }
 
     // prepare columns to be fetched based on array definition
-    $returned_columns = [];
-    foreach ($default_columns as $column => $label) {
-      $returned_columns[] = $column;
-    }
+    $returned_columns = array_keys($default_columns);
 
     // fetch leads
     $leads_to_be_processed = $this->fetch_by($fetch_conditions, $returned_columns);
@@ -446,7 +443,6 @@ class Lead extends Application_Record
       $error_messages[] = "No leads to export.";
       return [[], $error_messages];
     };
-    $leads_to_update = $leads_to_be_processed;
 
     // define removeable columns if empty
     $columns_to_check_if_empty = [
@@ -484,21 +480,18 @@ class Lead extends Application_Record
         unset($lead[$column]);
       }
     }
+    unset($lead);
 
     // fetch counties
     $counties = (new County)->all();
     // create county id name map
-    $county_map = [];
-    foreach ($counties as $county) {
-      $county_map[$county['id']] = $county['name'];
-    }
+    $county_map = array_column($counties, 'name', 'id');
 
     // format values
-    foreach ($leads_to_be_processed as $lead) {
+    foreach ($leads_to_be_processed as &$lead) {
       // format list_price
       if (isset($lead['list_price'])) {
-        $formatted_price = (int)$lead['list_price'];
-        $lead['list_price'] = $formatted_price;
+        $lead['list_price'] = (int)$lead['list_price'];
       }
 
       // format status_date
@@ -511,14 +504,12 @@ class Lead extends Application_Record
 
       // format absentee_owner
       if (isset($lead['absentee_owner'])) {
-        $absentee_owner_value = $lead['absentee_owner'] ? "Yes" : "No";
-        $lead['absentee_owner'] = $absentee_owner_value;
+        $lead['absentee_owner'] = $lead['absentee_owner'] ? "Yes" : "No";
       }
 
       // format property_county
       if (isset($lead['property_county']) && isset($county_map[$lead['property_county']])) {
-        $county_name = $county_map[$lead['property_county']];
-        $lead['property_county'] = $county_name;
+        $lead['property_county'] = $county_map[$lead['property_county']];
       }
 
       // format other column values here
@@ -541,6 +532,7 @@ class Lead extends Application_Record
       }
     }
     unset($header);
+
     // write headers to the csv file
     fputcsv($file_output, $headers);
     // write each leads to the csv file
@@ -575,6 +567,15 @@ class Lead extends Application_Record
     $file_name = "{$formatted_export_date}-{$leads_category}.csv";
     $file_path = $export_directory . $file_name;
 
+    // check if the file already exists
+    if (file_exists($file_path)) {
+      $exported_file['path'] = $file_path;
+      $exported_file['name'] = $file_name;
+      $exported_file['type'] = 'text/csv';
+      $exported_file['size'] = filesize($file_path);
+      return [$exported_file, $error_messages];
+    }
+
     // check if directory exists
     if (!is_dir($export_directory)) {
       mkdir($export_directory, 0755, true);
@@ -596,33 +597,15 @@ class Lead extends Application_Record
 
     // close storage file
     fclose($file_saved);
+    fclose($file_output);
 
     // add filepath to return object
-    $exported_data['file_path'] = $file_path;
-    $exported_data['file_name'] = $file_name;
+    $exported_file['path'] = $file_path;
+    $exported_file['name'] = $file_name;
+    $exported_file['type'] = 'text/csv';
+    $exported_file['size'] = filesize($file_path);
 
-    // output the file content for download
-    // header('Content-Type: text/csv');
-    // header('Content-Disposition: attachment;filename="' . $file_name . '"');
-    // header('Cache-Control: max-age=0');
-    // rewind($file_output);
-    // fpassthru($file_output);
-    // close temporary file
-    // fclose($file_output);
-
-    // update import_lead column to false
-    foreach ($leads_to_update as &$lead) {
-      $lead['import_lead'] = false;
-    }
-    // write lead updates in database
-    $updated_leads = $this->update_all($leads_to_update, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
-
-    // add leads to return object
-    if (!empty($updated_leads)) {
-      $exported_data['leads'] = $updated_leads;
-    }
-
-    return [$exported_data, $error_messages];
+    return [$exported_file, $error_messages];
   }
 
   public function toggle_property(string $property)
