@@ -35,10 +35,13 @@ class CitiesController extends ApplicationController
     $error_messages = [];
     $alert_messages = [];
 
-    $origin_url = $_POST['origin_url'] ?? '/dashboard/cities';
-
     $city = new City;
-    list($city, $error_messages) = $city->add($this->city_params());
+    list($city, $errors) = $city->add($this->city_params());
+    $error_messages = array_merge($error_messages, $errors);
+
+    if (empty($error_messages)) {
+      $alert_messages[] = "City added";
+    }
 
     // assign leads automatically if from other pages
     if (!empty($_POST['origin_url'])) {
@@ -51,6 +54,7 @@ class CitiesController extends ApplicationController
       }
     }
 
+    $origin_url = $_POST['origin_url'] ?? '/dashboard/cities';
     $this->redirect("{$origin_url}", ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
@@ -70,15 +74,23 @@ class CitiesController extends ApplicationController
 
   public function update()
   {
+    $alert_messages = [];
+    $error_messages = [];
+
     $current_city = $this->set_current_city();
 
     if (!$current_city) {
       $this->render('not_found', 'application');
     }
 
-    list($current_city, $error_messages) = $current_city->update($this->city_params());
+    list($current_city, $errors) = $current_city->update($this->city_params());
+    $error_messages = array_merge($error_messages, $errors);
 
-    $this->redirect("/dashboard/cities/{$current_city->id}/edit", ['errors' => $error_messages]);
+    if (empty($error_messages)) {
+      $alert_messages[] = "City updated";
+    }
+
+    $this->redirect("/dashboard/cities/{$current_city->id}/edit", ['errors' => $error_messages, 'alerts' => $alert_messages]);
   }
 
   public function delete()

@@ -100,9 +100,9 @@ class LeadsController extends ApplicationController
 
             $page_title = "{$formatted_category_title} ($area_title)";
 
-            $date_today = new DateTime();
-            $start_date = (clone $date_today)->format('Y-m-d');
-            $end_date = (clone $date_today)->modify('+1 day')->format('Y-m-d');
+            $date_today = (new DateTime())->format('Y-m-d');
+            $start_date = $date_today;
+            $end_date = $date_today;
 
             $range['created_at'] = [$start_date, $end_date];
 
@@ -123,15 +123,7 @@ class LeadsController extends ApplicationController
       'range' => $range,
     ];
 
-    $processed_range = [];
-    if (isset($range['created_at']) && is_array($range['created_at'])) {
-      foreach ($range['created_at'] as $date) {
-        if (empty($date)) continue;
-
-        $processed_date = $date . " 00:00:00";
-        $processed_range['created_at'][] = $processed_date;
-      }
-    }
+    $processed_range = $this->format_range_filter($range);
 
     $all_leads = [];
     list($all_leads, $total_pages) = (new Lead)->paginate_leads($current_page, $leads_per_page, $sort_order, $sort_by, $filter_by, $processed_range);
@@ -217,15 +209,7 @@ class LeadsController extends ApplicationController
     $filter_by = $_GET['filter_by'] ?? [];
     $range = $_GET['range'] ?? [];
 
-    $processed_range = [];
-    if (isset($range['created_at']) && is_array($range['created_at'])) {
-      foreach ($range['created_at'] as $date) {
-        if (empty($date)) continue;
-
-        $processed_date = $date . " 00:00:00";
-        $processed_range['created_at'][] = $processed_date;
-      }
-    }
+    $processed_range = $this->format_range_filter($range);
 
     $export_params = [
       'sort_by' => $sort_by,
@@ -247,7 +231,7 @@ class LeadsController extends ApplicationController
     $error_messages = array_merge($error_messages, $errors);
 
     if (empty($file)) {
-      $error_messages[] = "Export failed.";
+      $error_messages[] = "Export aborted.";
       $this->redirect('/dashboard/leads', ['errors' => $error_messages, 'alerts' => $alert_messages]);
     }
 
@@ -267,6 +251,53 @@ class LeadsController extends ApplicationController
 
     // Read and output the file content
     readfile($file['path']);
+  }
+
+  public function clear()
+  {
+    $error_messages = [];
+    $alert_messages = [];
+
+    $unprocessed_filter = $_POST['filter_by'] ?? [];
+    $unprocessed_range = $_POST['range'] ?? [];
+
+    parse_str($unprocessed_filter, $filter_output);
+    parse_str($unprocessed_range, $range_output);
+
+    $filter_by = $filter_output ?? [];
+    $range = $range_output ?? [];
+
+    $processed_range = $this->format_range_filter($range);
+
+    list($cleared_leads, $errors) = (new Lead)->clear_leads($filter_by, $processed_range);
+    $error_messages = array_merge($error_messages, $errors);
+
+    if (is_array($cleared_leads)) {
+      $cleared_leads_count = count($cleared_leads);
+      $alert_messages[] = "{$cleared_leads_count} lead(s) cleared.";
+    }
+
+    $redirect_link = $_POST['origin_url'] ?? "/dashboard/leads";
+    $this->redirect($redirect_link, ['errors' => $error_messages, 'alerts' => $alert_messages]);
+  }
+
+  private function format_range_filter(array $range)
+  {
+    $processed_range = [];
+    if (isset($range['created_at']) && is_array($range['created_at'])) {
+      foreach ($range['created_at'] as $index => $date) {
+        if (empty($date)) continue;
+
+        if ($index == 1) {
+          $processed_date = $date . " 23:59:59";
+        } else {
+          $processed_date = $date . " 00:00:00";
+        }
+        $processed_range['created_at'][] = $processed_date;
+      }
+    }
+
+    return $processed_range;
   }
 
   private function get_pages(array $search_params = [], int $maximum_page_links = 10): array

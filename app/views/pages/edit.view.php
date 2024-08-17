@@ -5,21 +5,6 @@ $edit_uri = "/dashboard/pages/{$current_page->id}";
 $edit_link = $this->get_url($edit_uri);
 $delete_uri = "/dashboard/pages/{$current_page->id}/delete";
 $delete_link = $this->get_url($delete_uri);
-$errors = $this->get_flash('errors');
-?>
-
-
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
 ?>
 
 <h1>edit page</h1>

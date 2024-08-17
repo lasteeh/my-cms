@@ -1,3 +1,8 @@
+<?php
+$error_messages = $this->get_flash('errors');
+$alert_messages = $this->get_flash('alerts');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,6 +15,38 @@
 </head>
 
 <body class="application">
+  <div id="overlays">
+    <?php if ((!empty($error_messages)) || (!empty($alert_messages))) : ?>
+      <div class="flash-messages">
+        <?php if (!empty($error_messages)) : ?>
+          <ul class="errors">
+            <?php
+            foreach ($error_messages as $error) {
+              $message = <<<HTML
+              <li onclick="this.style.display=`none`;"><span>&#10006;</span> <span>&nbsp;&#9474;&nbsp;</span> <span>$error</span></li>
+            HTML;
+
+              echo $message;
+            }
+            ?>
+          </ul>
+        <?php endif; ?>
+        <?php if (!empty($alert_messages)) : ?>
+          <ul class="alerts">
+            <?php
+            foreach ($alert_messages as $alert) {
+              $message = <<<HTML
+              <li onclick="this.style.display=`none`;"><span>&#10004;</span> <span>&nbsp;&#9474;&nbsp;</span> <span>$alert</span></li>
+            HTML;
+
+              echo $message;
+            }
+            ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
+  </div>
   <header>
     <h1>MRCLeads</h1>
   </header>

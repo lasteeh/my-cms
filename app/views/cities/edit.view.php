@@ -1,20 +1,7 @@
 <?php
 $current_city = $this->get_object('current_city');
-$errors = $this->get_flash('errors');
 ?>
 
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
-?>
 
 <h1>Edit <?= $current_city->name; ?></h1>
 
@@ -83,7 +70,7 @@ $viewport_se = $current_city->viewport_se;
   </div>
   <div style="display: inline-block;">
     <button style="display: block;" type="submit">Update City</button>
-    <button style="display: block;" type="submit" form="delete_city">Delete City</button>
+    <button style="display: block;" type="submit" form="delete_city" onclick="return confirm('Are you sure?');">Delete City</button>
   </div>
 </form>
 <form id="delete_city" action="<?php $this->url("/dashboard/cities/{$current_city->id}/delete"); ?>" method="post">

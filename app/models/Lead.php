@@ -632,6 +632,29 @@ class Lead extends Application_Record
     }
   }
 
+  public function clear_leads(array $filter_by = [], array $range)
+  {
+    $error_messages = [];
+    $filter_by['import_lead'] = '1';
+
+    $uncleared_leads = $this->fetch_by($filter_by, [], $range);
+
+    foreach ($uncleared_leads as &$lead) {
+      var_dump($lead['import_lead']);
+      $lead['import_lead'] = false;
+      var_dump($lead['import_lead']);
+    }
+
+    $cleared_leads = $this->update_all($uncleared_leads, ['unique_by' => 'vortex_id', 'batch_size' => 300]);
+
+    if ($cleared_leads === false) {
+      $error_messages[] = "No leads cleared";
+      return [null, $error_messages];
+    }
+
+    return [$cleared_leads, $error_messages];
+  }
+
   private function standardize_street_address(string $address, array $suffix_lookup): null|string
   {
     if (empty($address)) return null;

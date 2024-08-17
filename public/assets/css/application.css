@@ -17,6 +17,9 @@
     --bg-gray: 0, 0%, 50%;
     --bg-blue: 240, 90%, 75%;
 
+    --z-index-content: 1;
+    --z-index-overlay: 100;
+
     font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
       Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
       sans-serif;
@@ -60,6 +63,9 @@
     grid-area: main;
     z-index: 1;
     overflow-y: auto;
+
+    position: relative;
+    isolation: isolate;
   }
   .application > aside {
     grid-area: aside;
@@ -69,6 +75,20 @@
   .application > footer {
     grid-area: footer;
     z-index: 4;
+  }
+
+  #overlays {
+    position: fixed;
+    inset: 0;
+
+    overflow: auto;
+
+    pointer-events: none;
+    z-index: var(--z-index-overlay);
+
+    & * {
+      pointer-events: auto;
+    }
   }
 }
 
@@ -95,5 +115,46 @@
 
   aside menu {
     list-style: none;
+  }
+
+  .flash-messages {
+    max-width: max-content;
+    padding: 1em;
+    margin-block-start: 4em;
+    margin-inline-start: auto;
+
+    & ul {
+      list-style: none;
+    }
+
+    & ul.alerts {
+      --flash-message-bg-color: darkgreen;
+      --flash-message-color: white;
+    }
+
+    & li {
+      cursor: pointer;
+      background-color: var(--flash-message-bg-color, red);
+      font-weight: bold;
+      color: var(--flash-message-color, white);
+      padding: 0.5em 1em;
+      border-radius: 0.25em;
+      box-shadow: 1px 1px 2px 1px hsl(0, 0%, 0%, 0.5);
+      animation: flash-show 500ms cubic-bezier(0, 1.7, 0.3, 0.7);
+
+      margin-block-end: 0.5em;
+      margin-inline-start: auto;
+      max-width: max-content;
+    }
+  }
+}
+
+/* key frames */
+@keyframes flash-show {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0%);
   }
 }

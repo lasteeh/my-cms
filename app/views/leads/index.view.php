@@ -4,8 +4,6 @@ $domain = $_SERVER['HTTP_HOST'];
 $request_uri = $_SERVER['REQUEST_URI'];
 $origin_url = str_replace(self::$ROOT_URL, "", $protocol . $domain . $request_uri);
 
-$errors = $this->get_flash('errors');
-$alerts = $this->get_flash('alerts');
 $leads = $this->get_object('leads');
 $search_params = $this->get_object('search_params');
 
@@ -39,6 +37,11 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
 ?>
 
 <style>
+  button,
+  input:where([type="file"], [type="date"]) {
+    cursor: pointer;
+  }
+
   #leads-table {
     isolation: isolate;
   }
@@ -165,7 +168,7 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
 
     position: relative;
     z-index: -1;
-    scroll-padding-top: 4em;
+    scroll-padding-top: 8em;
 
     & table {
       position: relative;
@@ -248,30 +251,6 @@ $is_checked = function (string $key, mixed $value, array $search_params) {
   }
 </style>
 
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
-
-if ($alerts) {  ?>
-  <ul>
-    <?php
-    foreach ($alerts as $alert) {
-      echo "<li>{$alert}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
-?>
-
 <h1 style="margin-block-end: 0.5em;"><?= $this->get_page_info('title') ?></h1>
 
 <div style="display: flex; flex-flow: row wrap; justify-content: start; gap: 0.5em; margin-block: 0.5em;">
@@ -304,7 +283,9 @@ if ($alerts) {  ?>
 
   <form id="clear" action="<?= $this->get_url('/dashboard/leads/clear'); ?>" method="post" style="max-width: max-content; margin-inline-start: auto;">
     <input type="hidden" name="origin_url" value="<?= $origin_url ?>">
-    <button onclick="return confirm('Are you sure?');" type="submit" style="padding: 0.25em 0.5em; background-color: hsl(var(--bg-red),0.9); border-radius: 0.25em; border: 1px solid black; font-weight: bold; color: white;">Clear</button>
+    <input type="hidden" name="filter_by" value="<?= http_build_query($search_params['filter_by']); ?>">
+    <input type="hidden" name="range" value="<?= http_build_query($search_params['range']); ?>">
+    <button onclick="return confirm('Are you sure?');" type="submit" style="padding: 0.25em 0.5em; background-color: darkred; border-radius: 0.25em; border: 1px solid black; font-weight: bold; color: white;">Clear</button>
   </form>
 </div>
 
@@ -358,13 +339,13 @@ if ($alerts) {  ?>
 
     <div class="filter-group" id="filter-date">
       <label>Start Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][0] ?? '' ?>"></label>
-      <label>End Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->modify('+1 day')->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][1] ?? '' ?>"></label>
+      <label>End Date: <input type="date" name="range[created_at][]" max="<?= (new DateTime)->format('Y-m-d') ?>" value="<?= $search_params['range']['created_at'][1] ?? '' ?>"></label>
     </div>
 
     <button type="submit">Filter</button>
   </form>
 
-  <div style="position: relative; isolation: isolate; z-index: 1;">
+  <div>
     <?= $pagination_links ?>
   </div>
 

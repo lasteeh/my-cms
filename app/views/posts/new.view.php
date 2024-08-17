@@ -1,20 +1,3 @@
-<?php
-$errors = $this->get_flash('errors');
-?>
-
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
-?>
-
 <h1>new post</h1>
 <form action="<?php $this->url('/dashboard/posts') ?>" method="post">
   <input type="text" placeholder="title" name="title">

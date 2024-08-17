@@ -4,20 +4,6 @@ $edit_uri = "/dashboard/posts/{$current_post->id}";
 $edit_link = $this->get_url($edit_uri);
 $delete_uri = "/dashboard/posts/{$current_post->id}/delete";
 $delete_link = $this->get_url($delete_uri);
-$errors = $this->get_flash('errors');
-?>
-
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
 ?>
 
 <h1>edit post</h1>

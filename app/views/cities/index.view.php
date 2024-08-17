@@ -1,20 +1,3 @@
-<?php
-$errors = $this->get_flash('errors');
-?>
-
-<?php
-if ($errors) {  ?>
-  <ul>
-    <?php
-    foreach ($errors as $error) {
-      echo "<li>{$error}</li>";
-    }
-    ?>
-  </ul>
-<?php
-}
-?>
-
 <h1 style="margin-block-end: 0.5em;">Standardized City Details</h1>
 
 
@@ -79,7 +62,7 @@ if ($errors) {  ?>
         <option value="Wisconsin">WI</option>
         <option value="Wyoming">WY</option>
       </select>
-      <br />
+
       <input type="text" name="zip_codes" value="" placeholder="Zip Codes" required>
       <select name="county_id" required>
         <option value="" disabled selected>Select County</option>
@@ -97,13 +80,13 @@ if ($errors) {  ?>
         }
         ?>
       </select>
-      <br />
+
       <input type="text" name="latitude" placeholder="Latitude">
       <input type="text" name="longitude" placeholder="Longitude">
-      <br />
+
       <input type="text" name="bound_nw" placeholder="Bound NW">
       <input type="text" name="bound_se" placeholder="Bound SW">
-      <br />
+
       <input type="text" name="viewport_nw" placeholder="Viewport NW">
       <input type="text" name="viewport_se" placeholder="Viewport SE">
     </div>
